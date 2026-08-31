@@ -1,16 +1,10 @@
 import { Text, View, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing } from '../theme';
+import { AcknowledgeButton } from './AcknowledgeButton';
 
 const CardFooter = ({ onAcknowledge, acknowledged }) => {
   if (onAcknowledge) {
-    return (
-      <Pressable
-        style={({ pressed }) => [styles.acknowledgeButton, pressed && styles.buttonPressed]}
-        onPress={onAcknowledge}
-      >
-        <Text style={styles.buttonText}>ACKNOWLEDGE</Text>
-      </Pressable>
-    );
+    return <AcknowledgeButton onPress={onAcknowledge} />;
   }
   if (acknowledged) {
     return <Text style={styles.resolvedLabel}>ACKNOWLEDGED</Text>;
@@ -93,21 +87,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: spacing.xl,
     lineHeight: 22,
-  },
-  acknowledgeButton: {
-    backgroundColor: colors.action,
-    paddingVertical: 18,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonPressed: {
-    backgroundColor: colors.actionPressed,
-  },
-  buttonText: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
   },
   resolvedLabel: {
     color: colors.textMuted,

@@ -1,7 +1,8 @@
 import { useLayoutEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from '../theme';
 import { useIncidents } from '../context/IncidentsContext';
+import { AcknowledgeButton } from '../components/AcknowledgeButton';
 
 const Field = ({ label, value, valueStyle }) => (
   <View style={styles.field}>
@@ -47,12 +48,7 @@ export function IncidentDetailScreen({ route, navigation }) {
       />
 
       {!resolved && (
-        <Pressable
-          style={({ pressed }) => [styles.acknowledgeButton, pressed && styles.buttonPressed]}
-          onPress={onAcknowledge}
-        >
-          <Text style={styles.buttonText}>ACKNOWLEDGE</Text>
-        </Pressable>
+        <AcknowledgeButton onPress={onAcknowledge} style={styles.acknowledgeButton} />
       )}
     </ScrollView>
   );
@@ -111,19 +107,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   acknowledgeButton: {
-    backgroundColor: colors.action,
-    paddingVertical: 18,
-    borderRadius: 8,
-    alignItems: 'center',
     marginTop: spacing.sm,
-  },
-  buttonPressed: {
-    backgroundColor: colors.actionPressed,
-  },
-  buttonText: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
   },
 });
