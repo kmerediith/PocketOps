@@ -1,5 +1,5 @@
-import { View, StyleSheet } from 'react-native';
-import { colors } from '../theme';
+import { StyleSheet } from 'react-native';
+import { Surface } from 'react-native-paper';
 import { useIncidents } from '../context/IncidentsContext';
 import { IncidentFeed } from '../components/IncidentFeed';
 
@@ -11,7 +11,7 @@ export function IncidentsScreen({ navigation }) {
     : `${incidents.length} active ${incidents.length === 1 ? 'incident' : 'incidents'}`;
 
   return (
-    <View style={styles.container}>
+    <Surface style={styles.container}>
       <IncidentFeed
         loading={loading}
         incidents={incidents}
@@ -20,13 +20,12 @@ export function IncidentsScreen({ navigation }) {
         onSelect={(incidentId) => navigation.navigate('IncidentDetail', { incidentId })}
         onAcknowledge={acknowledge}
       />
-    </View>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 });

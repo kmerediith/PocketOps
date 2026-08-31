@@ -1,5 +1,6 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '../theme';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native-paper';
+import { spacing } from '../theme';
 import { AlertCard } from './AlertCard';
 
 // Reusable incident list: loader while fetching, cards, or an empty state.
@@ -12,13 +13,15 @@ export const IncidentFeed = ({
   onAcknowledge,
 }) => {
   if (loading) {
-    return <ActivityIndicator size="large" color={colors.critical} style={styles.loader} />;
+    return <ActivityIndicator size="large" style={styles.loader} />;
   }
 
   if (incidents.length === 0) {
     return (
       <View style={styles.emptyStateContainer}>
-        <Text style={styles.emptyStateText}>{emptyText}</Text>
+        <Text variant="bodyLarge" style={styles.emptyStateText}>
+          {emptyText}
+        </Text>
       </View>
     );
   }
@@ -28,7 +31,13 @@ export const IncidentFeed = ({
       data={incidents}
       keyExtractor={(incident) => incident.incidentId}
       contentContainerStyle={styles.listContent}
-      ListHeaderComponent={headerLabel ? <Text style={styles.headerLabel}>{headerLabel}</Text> : null}
+      ListHeaderComponent={
+        headerLabel ? (
+          <Text variant="labelMedium" style={styles.headerLabel}>
+            {headerLabel.toUpperCase()}
+          </Text>
+        ) : null
+      }
       renderItem={({ item }) => (
         <AlertCard
           incidentId={item.incidentId}
@@ -52,13 +61,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   headerLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
     letterSpacing: 1,
-    textTransform: 'uppercase',
     marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
   emptyStateContainer: {
     flex: 1,
@@ -67,8 +73,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   emptyStateText: {
-    color: colors.textMuted,
-    fontSize: 16,
     textAlign: 'center',
   },
 });

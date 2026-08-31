@@ -1,8 +1,9 @@
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
+import { Appbar, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { navigationTheme } from '../theme';
 import { IncidentsScreen } from '../screens/IncidentsScreen';
 import { IncidentDetailScreen } from '../screens/IncidentDetailScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
@@ -11,46 +12,45 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.textPrimary,
-    border: colors.surface,
-    primary: colors.action,
-  },
-};
-
-const headerStyle = {
-  headerStyle: { backgroundColor: colors.surface },
-  headerTitleStyle: { color: colors.textPrimary, letterSpacing: 1 },
-  headerTintColor: colors.action,
-  headerShadowVisible: false,
-};
-
 const TAB_ICONS = {
-  Incidents: 'warning',
-  History: 'checkmark-done',
-  Settings: 'settings',
+  Incidents: 'alert-circle',
+  History: 'check-all',
+  Settings: 'cog',
 };
 
-const tabScreenOptions = ({ route }) => ({
-  ...headerStyle,
-  sceneStyle: { backgroundColor: colors.background },
-  tabBarActiveTintColor: colors.action,
-  tabBarInactiveTintColor: colors.textMuted,
-  tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.surface },
-  tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 1 },
-  tabBarIcon: ({ color, size }) => (
-    <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />
-  ),
-});
+// Material top app bar for the native stack.
+function PaperHeader({ navigation, route, options, back }) {
+  const title = options.title ?? route.name;
+  return (
+    <Appbar.Header elevated>
+      {back ? <Appbar.BackAction onPress={navigation.goBack} /> : null}
+      <Appbar.Content title={title} titleStyle={{ letterSpacing: 1 }} />
+    </Appbar.Header>
+  );
+}
+
+const renderPaperHeader = (props) => <PaperHeader {...props} />;
+const renderTabIcon = (route) => ({ color, size }) => (
+  <MaterialCommunityIcons name={TAB_ICONS[route.name]} size={size} color={color} />
+);
 
 function MainTabs() {
+  const theme = useTheme();
   return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        header: renderPaperHeader,
+        sceneStyle: { backgroundColor: theme.colors.background },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.outlineVariant,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 1 },
+        tabBarIcon: renderTabIcon(route),
+      })}
+    >
       <Tab.Screen
         name="Incidents"
         component={IncidentsScreen}
@@ -67,9 +67,15 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
+  const theme = useTheme();
   return (
-    <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ ...headerStyle, contentStyle: { backgroundColor: colors.background } }}>
+    <NavigationContainer theme={navigationTheme}>
+      <Stack.Navigator
+        screenOptions={{
+          header: renderPaperHeader,
+          contentStyle: { backgroundColor: theme.colors.background },
+        }}
+      >
         <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen
           name="IncidentDetail"

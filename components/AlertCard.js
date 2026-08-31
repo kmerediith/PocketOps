@@ -1,13 +1,18 @@
-import { Text, View, StyleSheet, Pressable } from 'react-native';
-import { colors, spacing } from '../theme';
+import { StyleSheet, View } from 'react-native';
+import { Card, Text, useTheme } from 'react-native-paper';
+import { spacing } from '../theme';
 import { AcknowledgeButton } from './AcknowledgeButton';
 
 const CardFooter = ({ onAcknowledge, acknowledged }) => {
   if (onAcknowledge) {
-    return <AcknowledgeButton onPress={onAcknowledge} />;
+    return <AcknowledgeButton onPress={onAcknowledge} style={styles.footerButton} />;
   }
   if (acknowledged) {
-    return <Text style={styles.resolvedLabel}>ACKNOWLEDGED</Text>;
+    return (
+      <Text variant="labelSmall" style={styles.resolvedLabel}>
+        ACKNOWLEDGED
+      </Text>
+    );
   }
   return null;
 };
@@ -21,77 +26,72 @@ export const AlertCard = ({
   onAcknowledge,
   acknowledged = false,
 }) => {
+  const theme = useTheme();
+  const accent = acknowledged ? theme.colors.outline : theme.colors.error;
+
   return (
-    <Pressable
+    <Card
+      mode="contained"
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [
-        styles.cardContainer,
+      style={[
+        styles.card,
+        { borderLeftColor: accent },
         acknowledged && styles.cardResolved,
-        pressed && onPress && styles.cardPressed,
       ]}
     >
-      {/* Tertiary: Incident ID and Time Elapsed */}
-      <View style={styles.metaRow}>
-        <Text style={styles.tertiaryText}>{incidentId}</Text>
-        <Text style={styles.tertiaryText}>{timeElapsed}</Text>
-      </View>
+      <Card.Content>
+        <View style={styles.metaRow}>
+          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            {incidentId}
+          </Text>
+          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            {timeElapsed}
+          </Text>
+        </View>
 
-      {/* Primary: Service Name */}
-      <Text style={styles.primaryText}>{service}</Text>
+        <Text variant="headlineSmall" style={styles.service}>
+          {service}
+        </Text>
 
-      {/* Secondary: Critical Error Trigger Source */}
-      <Text style={styles.secondaryText}>{summary}</Text>
+        <Text variant="bodyLarge" style={[styles.summary, { color: accent }]}>
+          {summary}
+        </Text>
 
-      {/* Massive, Thumb-Optimized Action Button */}
-      <CardFooter onAcknowledge={onAcknowledge} acknowledged={acknowledged} />
-    </Pressable>
+        <CardFooter onAcknowledge={onAcknowledge} acknowledged={acknowledged} />
+      </Card.Content>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
-  cardContainer: {
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
+  card: {
     marginVertical: spacing.sm,
     marginHorizontal: spacing.md,
-    borderRadius: 12,
     borderLeftWidth: 6,
-    borderLeftColor: colors.critical,
   },
   cardResolved: {
-    borderLeftColor: colors.textMuted,
     opacity: 0.7,
-  },
-  cardPressed: {
-    opacity: 0.85,
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
-  tertiaryText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  primaryText: {
-    color: colors.textPrimary,
-    fontSize: 24,
+  service: {
     fontWeight: 'bold',
     marginBottom: spacing.sm,
   },
-  secondaryText: {
-    color: colors.critical,
-    fontSize: 16,
-    marginBottom: spacing.xl,
+  summary: {
+    marginBottom: spacing.lg,
     lineHeight: 22,
   },
+  footerButton: {
+    marginBottom: spacing.sm,
+  },
   resolvedLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
     letterSpacing: 1.5,
+    marginBottom: spacing.sm,
   },
 });
