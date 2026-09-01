@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Divider, Text, useTheme } from 'react-native-paper';
-import { spacing } from '../theme';
+import { severityColor, spacing } from '../theme';
 import { useIncidents } from '../context/IncidentsContext';
 import { AcknowledgeButton } from '../components/AcknowledgeButton';
 
@@ -37,7 +37,9 @@ export function IncidentDetailScreen({ route, navigation }) {
   }
 
   const resolved = Boolean(incident.resolvedAt);
-  const statusColor = resolved ? theme.colors.onSurfaceVariant : theme.colors.error;
+  const severity = incident.severity ?? 'critical';
+  const faultColor = severityColor(theme, severity);
+  const statusColor = resolved ? theme.colors.onSurfaceVariant : faultColor;
 
   const onAcknowledge = async () => {
     await acknowledge(incident.incidentId);
@@ -53,14 +55,14 @@ export function IncidentDetailScreen({ route, navigation }) {
       <Field
         label="Fault"
         value={incident.summary}
-        valueStyle={[styles.summary, { color: theme.colors.error }]}
+        valueStyle={[styles.summary, { color: faultColor }]}
       />
       <Divider />
       <Field label="Triggered" value={incident.timeElapsed} />
       <Divider />
       <Field
         label="Status"
-        value={resolved ? 'Acknowledged' : 'Active — high severity'}
+        value={resolved ? 'Acknowledged' : `Active — ${severity} severity`}
         valueStyle={[styles.status, { color: statusColor }]}
       />
 

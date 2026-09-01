@@ -8,6 +8,7 @@ export const colors = {
   textPrimary: '#FFFFFF',
   textMuted: '#A0A0A0',
   critical: '#FF4C4C',
+  warning: '#FFC24B',
   action: '#007AFF',
   actionPressed: '#005BB5',
 };
@@ -35,6 +36,8 @@ export const paperTheme = {
     onSurfaceVariant: colors.textMuted,
     error: colors.critical,
     onError: '#FFFFFF',
+    warning: colors.warning,
+    onWarning: '#000000',
     outline: colors.textMuted,
     outlineVariant: colors.surface,
     elevation: {
@@ -51,6 +54,10 @@ const { DarkTheme: adaptedNavigationTheme } = adaptNavigationTheme({
   reactNavigationDark: NavigationDarkTheme,
   materialDark: paperTheme,
 });
+
+// Maps an incident severity to its accent color from the active Paper theme.
+export const severityColor = (theme, severity) =>
+  severity === 'high' ? theme.colors.warning : theme.colors.error;
 
 export const navigationTheme = {
   ...adaptedNavigationTheme,

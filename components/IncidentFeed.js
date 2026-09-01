@@ -44,6 +44,7 @@ export const IncidentFeed = ({
           service={item.service}
           summary={item.summary}
           timeElapsed={item.timeElapsed}
+          severity={item.severity}
           acknowledged={Boolean(item.resolvedAt)}
           onPress={onSelect ? () => onSelect(item.incidentId) : undefined}
           onAcknowledge={onAcknowledge ? () => onAcknowledge(item.incidentId) : undefined}

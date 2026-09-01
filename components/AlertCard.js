@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
-import { spacing } from '../theme';
+import { severityColor, spacing } from '../theme';
 import { AcknowledgeButton } from './AcknowledgeButton';
 
 const CardFooter = ({ onAcknowledge, acknowledged }) => {
@@ -22,12 +22,13 @@ export const AlertCard = ({
   service,
   summary,
   timeElapsed,
+  severity = 'critical',
   onPress,
   onAcknowledge,
   acknowledged = false,
 }) => {
   const theme = useTheme();
-  const accent = acknowledged ? theme.colors.outline : theme.colors.error;
+  const accent = acknowledged ? theme.colors.outline : severityColor(theme, severity);
 
   return (
     <Card
