@@ -4,6 +4,7 @@ import { openDatabase } from '../src/db.js';
 import { createRepository } from '../src/repository.js';
 import { createApp } from '../src/app.js';
 import { formatRelative } from '../src/relative-time.js';
+import { generateIncident, startIncidentGenerator } from '../src/generator.js';
 
 function freshRepo() {
   return createRepository(openDatabase(':memory:'));
@@ -55,6 +56,55 @@ test('create validates input and assigns the next id', () => {
   });
   assert.equal(incident.incidentId, 'INC-9953');
   assert.ok(repo.listActive().some((i) => i.incidentId === 'INC-9953'));
+});
+
+test('generateIncident inserts a valid, active incident', () => {
+  const repo = freshRepo();
+  const before = repo.listActive().length;
+
+  const incident = generateIncident(repo);
+  assert.match(incident.incidentId, /^INC-\d+$/);
+  assert.ok(['critical', 'high'].includes(incident.severity));
+  assert.equal(incident.resolvedAt, undefined);
+  assert.equal(repo.listActive().length, before + 1);
+});
+
+test('startIncidentGenerator ticks on its interval and stops cleanly', async () => {
+  const repo = freshRepo();
+  const before = repo.listActive().length;
+
+  const stop = startIncidentGenerator(repo, { intervalMs: 10, logger: {} });
+  await new Promise((resolve) => setTimeout(resolve, 55));
+  stop();
+  const afterStop = repo.listActive().length;
+
+  assert.ok(afterStop > before, 'expected the generator to add incidents');
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.equal(repo.listActive().length, afterStop, 'expected no ticks after stop()');
+});
+
+test('startIncidentGenerator with intervalMs <= 0 is a no-op', () => {
+  const repo = freshRepo();
+  const before = repo.listActive().length;
+  const stop = startIncidentGenerator(repo, { intervalMs: 0, logger: {} });
+  stop();
+  assert.equal(repo.listActive().length, before);
+});
+
+test('POST /api/incidents/simulate adds one incident', async () => {
+  const app = createApp({ db: openDatabase(':memory:') });
+  const server = app.listen(0);
+  const base = `http://localhost:${server.address().port}`;
+
+  try {
+    const before = (await (await fetch(`${base}/api/incidents`)).json()).length;
+    const res = await fetch(`${base}/api/incidents/simulate`, { method: 'POST' });
+    assert.equal(res.status, 201);
+    const after = (await (await fetch(`${base}/api/incidents`)).json()).length;
+    assert.equal(after, before + 1);
+  } finally {
+    server.close();
+  }
 });
 
 test('formatRelative renders the expected buckets', () => {

@@ -2,12 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import { openDatabase } from './db.js';
 import { createRepository } from './repository.js';
+import { generateIncident } from './generator.js';
 
 // Builds the Express app around a repository. Pass a db for tests; otherwise the
-// default SQLite file is opened.
+// default SQLite file is opened. The repo is exposed on `app.locals.repo` so the
+// server entrypoint can share it with the background incident generator.
 export function createApp({ db = openDatabase() } = {}) {
   const repo = createRepository(db);
   const app = express();
+  app.locals.repo = repo;
 
   app.use(cors());
   app.use(express.json());
@@ -43,6 +46,12 @@ export function createApp({ db = openDatabase() } = {}) {
     const { incident, error } = repo.create(req.body);
     if (error) return res.status(400).json({ error });
     res.status(201).json(incident);
+  });
+
+  // Drops one randomised incident into the queue — handy for demos and tests
+  // without composing a request body.
+  app.post('/api/incidents/simulate', (_req, res) => {
+    res.status(201).json(generateIncident(repo));
   });
 
   app.use((_req, res) => res.status(404).json({ error: 'not found' }));

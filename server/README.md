@@ -20,21 +20,30 @@ npm test           # node:test suite (uses an in-memory DB)
 
 ## Config
 
-| env var   | default            | notes                        |
-|-----------|--------------------|------------------------------|
-| `PORT`    | `4000`             | HTTP port                    |
-| `DB_PATH` | `pocketops.sqlite` | SQLite file, or `:memory:`   |
+| env var                 | default            | notes                                          |
+|-------------------------|--------------------|------------------------------------------------|
+| `PORT`                  | `4000`             | HTTP port                                       |
+| `DB_PATH`               | `pocketops.sqlite` | SQLite file, or `:memory:`                      |
+| `INCIDENT_INTERVAL_MS`  | `30000`            | how often a new incident is generated; `0` off  |
+
+## Incoming incidents
+
+While the server runs it drops a fresh, randomised incident into the queue every
+`INCIDENT_INTERVAL_MS` (default 30s), so the app's feed keeps moving. Set
+`INCIDENT_INTERVAL_MS=0` to turn the generator off. `POST /api/incidents/simulate`
+generates one on demand.
 
 ## Endpoints
 
 | method + path                        | description                                  |
 |--------------------------------------|----------------------------------------------|
 | `GET  /health`                       | `{ ok: true }`                               |
-| `GET  /api/incidents`                | active queue, critical first then oldest      |
+| `GET  /api/incidents`                | active queue, critical first then newest      |
 | `GET  /api/incidents/history`        | acknowledged incidents, newest first         |
 | `GET  /api/incidents/:id`            | one incident (either state)                   |
 | `POST /api/incidents/:id/acknowledge`| mark acknowledged (idempotent)               |
 | `POST /api/incidents`                | create one: `{ service, severity, summary }` |
+| `POST /api/incidents/simulate`       | generate one randomised incident now         |
 
 `severity` is `"critical"` or `"high"`.
 
