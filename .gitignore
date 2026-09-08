@@ -2,6 +2,11 @@
 
 # dependencies
 node_modules/
+server/node_modules/
+
+# backend
+*.sqlite
+*.sqlite-journal
 
 # Expo
 .expo/

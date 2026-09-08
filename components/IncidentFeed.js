@@ -1,5 +1,5 @@
-import { FlatList, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Text } from 'react-native-paper';
+import { FlatList, RefreshControl, StyleSheet } from 'react-native';
+import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import { spacing } from '../theme';
 import { AlertCard } from './AlertCard';
 
@@ -9,20 +9,38 @@ export const IncidentFeed = ({
   incidents,
   headerLabel,
   emptyText,
+  errorText,
   onSelect,
   onAcknowledge,
+  onRefresh,
+  refreshing = false,
 }) => {
+  const theme = useTheme();
+
   if (loading) {
     return <ActivityIndicator size="large" style={styles.loader} />;
   }
 
+  const refreshControl = onRefresh ? (
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+  ) : undefined;
+
   if (incidents.length === 0) {
     return (
-      <View style={styles.emptyStateContainer}>
-        <Text variant="bodyLarge" style={styles.emptyStateText}>
-          {emptyText}
-        </Text>
-      </View>
+      <FlatList
+        data={[]}
+        renderItem={null}
+        refreshControl={refreshControl}
+        contentContainerStyle={styles.emptyStateContainer}
+        ListEmptyComponent={
+          <Text
+            variant="bodyLarge"
+            style={[styles.emptyStateText, errorText && { color: theme.colors.error }]}
+          >
+            {errorText ?? emptyText}
+          </Text>
+        }
+      />
     );
   }
 
@@ -31,6 +49,7 @@ export const IncidentFeed = ({
       data={incidents}
       keyExtractor={(incident) => incident.incidentId}
       contentContainerStyle={styles.listContent}
+      refreshControl={refreshControl}
       ListHeaderComponent={
         headerLabel ? (
           <Text variant="labelMedium" style={styles.headerLabel}>
@@ -68,7 +87,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   emptyStateContainer: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,

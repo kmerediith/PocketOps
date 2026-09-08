@@ -4,7 +4,7 @@ import { useIncidents } from '../context/IncidentsContext';
 import { IncidentFeed } from '../components/IncidentFeed';
 
 export function HistoryScreen({ navigation }) {
-  const { history } = useIncidents();
+  const { history, refreshing, refresh } = useIncidents();
 
   return (
     <Surface style={styles.container}>
@@ -13,6 +13,8 @@ export function HistoryScreen({ navigation }) {
         headerLabel={history.length > 0 ? `${history.length} resolved` : undefined}
         emptyText="Nothing acknowledged yet."
         onSelect={(incidentId) => navigation.navigate('IncidentDetail', { incidentId })}
+        onRefresh={refresh}
+        refreshing={refreshing}
       />
     </Surface>
   );

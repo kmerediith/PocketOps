@@ -4,7 +4,7 @@ import { useIncidents } from '../context/IncidentsContext';
 import { IncidentFeed } from '../components/IncidentFeed';
 
 export function IncidentsScreen({ navigation }) {
-  const { incidents, loading, acknowledge } = useIncidents();
+  const { incidents, loading, refreshing, error, acknowledge, refresh } = useIncidents();
 
   const headerLabel = loading
     ? undefined
@@ -17,8 +17,11 @@ export function IncidentsScreen({ navigation }) {
         incidents={incidents}
         headerLabel={headerLabel}
         emptyText="Zero active high-severity incidents."
+        errorText={error ? "Can't reach the incident service. Pull to retry." : undefined}
         onSelect={(incidentId) => navigation.navigate('IncidentDetail', { incidentId })}
         onAcknowledge={acknowledge}
+        onRefresh={refresh}
+        refreshing={refreshing}
       />
     </Surface>
   );
