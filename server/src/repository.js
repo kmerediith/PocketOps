@@ -43,6 +43,12 @@ export function createRepository(db) {
       INSERT INTO incidents (incident_id, service, severity, summary, triggered_at)
       VALUES (@incidentId, @service, @severity, @summary, @triggeredAt)
     `),
+    deleteResolved: db.prepare(`
+      DELETE FROM incidents WHERE incident_id = ? AND acknowledged_at IS NOT NULL
+    `),
+    deleteAllResolved: db.prepare(`
+      DELETE FROM incidents WHERE acknowledged_at IS NOT NULL
+    `),
   };
 
   return {
@@ -78,6 +84,22 @@ export function createRepository(db) {
         triggeredAt: Date.now(),
       });
       return { incident: toWire(statements.byId.get(incidentId)) };
+    },
+
+    // Only resolved (acknowledged) incidents can be deleted. Returns { error }
+    // describing why nothing was deleted, or { deleted: true } on success.
+    delete(id) {
+      const existing = statements.byId.get(id);
+      if (!existing) return { error: 'not_found' };
+      if (existing.acknowledged_at == null) return { error: 'not_resolved' };
+      statements.deleteResolved.run(id);
+      return { deleted: true };
+    },
+
+    // Clears the whole resolved history in one shot. Returns how many rows went.
+    deleteAllResolved() {
+      const { changes } = statements.deleteAllResolved.run();
+      return { deletedCount: changes };
     },
   };
 }

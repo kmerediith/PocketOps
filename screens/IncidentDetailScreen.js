@@ -1,6 +1,6 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Divider, Text, useTheme } from 'react-native-paper';
+import { Button, Dialog, Divider, Portal, Text, useTheme } from 'react-native-paper';
 import { severityColor, spacing } from '../theme';
 import { useIncidents } from '../context/IncidentsContext';
 import { AcknowledgeButton } from '../components/AcknowledgeButton';
@@ -18,9 +18,10 @@ const Field = ({ label, value, valueStyle }) => (
 
 export function IncidentDetailScreen({ route, navigation }) {
   const { incidentId } = route.params;
-  const { getIncident, acknowledge } = useIncidents();
+  const { getIncident, acknowledge, deleteIncident } = useIncidents();
   const incident = getIncident(incidentId);
   const theme = useTheme();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: incident?.incidentId ?? 'Incident' });
@@ -43,6 +44,12 @@ export function IncidentDetailScreen({ route, navigation }) {
 
   const onAcknowledge = async () => {
     await acknowledge(incident.incidentId);
+    navigation.goBack();
+  };
+
+  const onDelete = async () => {
+    setConfirmingDelete(false);
+    await deleteIncident(incident.incidentId);
     navigation.goBack();
   };
 
@@ -69,6 +76,35 @@ export function IncidentDetailScreen({ route, navigation }) {
       {!resolved && (
         <AcknowledgeButton onPress={onAcknowledge} style={styles.acknowledgeButton} />
       )}
+
+      {resolved && (
+        <Button
+          mode="outlined"
+          icon="trash-can-outline"
+          textColor={theme.colors.error}
+          onPress={() => setConfirmingDelete(true)}
+          style={styles.deleteButton}
+        >
+          DELETE
+        </Button>
+      )}
+
+      <Portal>
+        <Dialog visible={confirmingDelete} onDismiss={() => setConfirmingDelete(false)}>
+          <Dialog.Title>Delete incident?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              {incident.incidentId} will be permanently removed from history.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setConfirmingDelete(false)}>Cancel</Button>
+            <Button textColor={theme.colors.error} onPress={onDelete}>
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 }
@@ -104,6 +140,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   acknowledgeButton: {
+    marginTop: spacing.lg,
+  },
+  deleteButton: {
     marginTop: spacing.lg,
   },
 });

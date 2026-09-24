@@ -58,6 +58,34 @@ test('create validates input and assigns the next id', () => {
   assert.ok(repo.listActive().some((i) => i.incidentId === 'INC-9953'));
 });
 
+test('delete removes a resolved incident but refuses an active one', () => {
+  const repo = freshRepo();
+
+  assert.deepEqual(repo.delete('INC-9942'), { error: 'not_resolved' });
+  assert.ok(repo.listActive().some((i) => i.incidentId === 'INC-9942'));
+
+  repo.acknowledge('INC-9942');
+  assert.deepEqual(repo.delete('INC-9942'), { deleted: true });
+  assert.equal(repo.getById('INC-9942'), null);
+
+  assert.deepEqual(repo.delete('INC-0000'), { error: 'not_found' });
+});
+
+test('deleteAllResolved clears history but leaves active incidents alone', () => {
+  const repo = freshRepo();
+  const activeBefore = repo.listActive().length;
+
+  repo.acknowledge('INC-9942');
+  repo.acknowledge('INC-9943');
+  assert.equal(repo.listHistory().length, 2);
+
+  assert.deepEqual(repo.deleteAllResolved(), { deletedCount: 2 });
+  assert.equal(repo.listHistory().length, 0);
+  assert.equal(repo.listActive().length, activeBefore - 2);
+
+  assert.deepEqual(repo.deleteAllResolved(), { deletedCount: 0 });
+});
+
 test('generateIncident inserts a valid, active incident', () => {
   const repo = freshRepo();
   const before = repo.listActive().length;
@@ -159,6 +187,49 @@ test('HTTP routes cover the queue / acknowledge / create flow', async () => {
       body: JSON.stringify({ service: 'only this' }),
     });
     assert.equal(bad.status, 400);
+  } finally {
+    server.close();
+  }
+});
+
+test('DELETE /api/incidents/:id only removes resolved incidents', async () => {
+  const app = createApp({ db: openDatabase(':memory:') });
+  const server = app.listen(0);
+  const base = `http://localhost:${server.address().port}`;
+
+  try {
+    const activeDelete = await fetch(`${base}/api/incidents/INC-9942`, { method: 'DELETE' });
+    assert.equal(activeDelete.status, 409);
+
+    await fetch(`${base}/api/incidents/INC-9942/acknowledge`, { method: 'POST' });
+    const resolvedDelete = await fetch(`${base}/api/incidents/INC-9942`, { method: 'DELETE' });
+    assert.equal(resolvedDelete.status, 204);
+
+    const missing = await fetch(`${base}/api/incidents/INC-9942`);
+    assert.equal(missing.status, 404);
+
+    const unknownDelete = await fetch(`${base}/api/incidents/INC-0000`, { method: 'DELETE' });
+    assert.equal(unknownDelete.status, 404);
+  } finally {
+    server.close();
+  }
+});
+
+test('DELETE /api/incidents/history clears the resolved list in one call', async () => {
+  const app = createApp({ db: openDatabase(':memory:') });
+  const server = app.listen(0);
+  const base = `http://localhost:${server.address().port}`;
+
+  try {
+    await fetch(`${base}/api/incidents/INC-9942/acknowledge`, { method: 'POST' });
+    await fetch(`${base}/api/incidents/INC-9943/acknowledge`, { method: 'POST' });
+
+    const res = await fetch(`${base}/api/incidents/history`, { method: 'DELETE' });
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { deletedCount: 2 });
+
+    const history = await (await fetch(`${base}/api/incidents/history`)).json();
+    assert.equal(history.length, 0);
   } finally {
     server.close();
   }

@@ -12,6 +12,7 @@ export const IncidentFeed = ({
   errorText,
   onSelect,
   onAcknowledge,
+  onDelete,
   onRefresh,
   refreshing = false,
 }) => {
@@ -67,6 +68,7 @@ export const IncidentFeed = ({
           acknowledged={Boolean(item.resolvedAt)}
           onPress={onSelect ? () => onSelect(item.incidentId) : undefined}
           onAcknowledge={onAcknowledge ? () => onAcknowledge(item.incidentId) : undefined}
+          onDelete={onDelete ? () => onDelete(item.incidentId) : undefined}
         />
       )}
     />

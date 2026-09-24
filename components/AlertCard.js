@@ -1,17 +1,27 @@
 import { StyleSheet, View } from 'react-native';
-import { Card, Text, useTheme } from 'react-native-paper';
+import { Card, IconButton, Text, useTheme } from 'react-native-paper';
 import { severityColor, spacing } from '../theme';
 import { AcknowledgeButton } from './AcknowledgeButton';
 
-const CardFooter = ({ onAcknowledge, acknowledged }) => {
+const CardFooter = ({ onAcknowledge, onDelete, acknowledged }) => {
   if (onAcknowledge) {
     return <AcknowledgeButton onPress={onAcknowledge} style={styles.footerButton} />;
   }
   if (acknowledged) {
     return (
-      <Text variant="labelSmall" style={styles.resolvedLabel}>
-        ACKNOWLEDGED
-      </Text>
+      <View style={styles.resolvedRow}>
+        <Text variant="labelSmall" style={styles.resolvedLabel}>
+          ACKNOWLEDGED
+        </Text>
+        {onDelete && (
+          <IconButton
+            icon="trash-can-outline"
+            size={18}
+            onPress={onDelete}
+            style={styles.deleteIcon}
+          />
+        )}
+      </View>
     );
   }
   return null;
@@ -25,6 +35,7 @@ export const AlertCard = ({
   severity = 'critical',
   onPress,
   onAcknowledge,
+  onDelete,
   acknowledged = false,
 }) => {
   const theme = useTheme();
@@ -59,7 +70,7 @@ export const AlertCard = ({
           {summary}
         </Text>
 
-        <CardFooter onAcknowledge={onAcknowledge} acknowledged={acknowledged} />
+        <CardFooter onAcknowledge={onAcknowledge} onDelete={onDelete} acknowledged={acknowledged} />
       </Card.Content>
     </Card>
   );
@@ -91,8 +102,17 @@ const styles = StyleSheet.create({
   footerButton: {
     marginBottom: spacing.sm,
   },
+  resolvedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   resolvedLabel: {
     letterSpacing: 1.5,
     marginBottom: spacing.sm,
+  },
+  deleteIcon: {
+    margin: 0,
+    marginTop: -spacing.sm,
   },
 });

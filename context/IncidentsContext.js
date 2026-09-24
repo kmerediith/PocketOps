@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   acknowledgeIncident,
+  deleteAllHistory as deleteAllHistoryRequest,
+  deleteIncident as deleteIncidentRequest,
   fetchIncidentHistory,
   fetchIncidentQueue,
 } from '../services/incidents';
@@ -94,6 +96,41 @@ export function IncidentsProvider({ children }) {
     }
   }, []);
 
+  const deleteIncident = useCallback(async (incidentId) => {
+    let removed;
+
+    // Optimistic: drop it from history immediately, restore it on failure.
+    setHistory((current) => {
+      removed = current.find((incident) => incident.incidentId === incidentId);
+      return current.filter((incident) => incident.incidentId !== incidentId);
+    });
+    if (!removed) return;
+
+    try {
+      await deleteIncidentRequest(incidentId);
+    } catch (err) {
+      setHistory((current) => [removed, ...current]);
+      setError(err);
+    }
+  }, []);
+
+  const deleteAllHistory = useCallback(async () => {
+    // Optimistic: clear the whole list immediately, restore it on failure.
+    let previous;
+    setHistory((current) => {
+      previous = current;
+      return [];
+    });
+    if (previous.length === 0) return;
+
+    try {
+      await deleteAllHistoryRequest();
+    } catch (err) {
+      setHistory(previous);
+      setError(err);
+    }
+  }, []);
+
   const getIncident = useCallback(
     (incidentId) =>
       incidents.find((incident) => incident.incidentId === incidentId) ??
@@ -103,8 +140,30 @@ export function IncidentsProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ incidents, history, loading, refreshing, error, acknowledge, getIncident, refresh }),
-    [incidents, history, loading, refreshing, error, acknowledge, getIncident, refresh]
+    () => ({
+      incidents,
+      history,
+      loading,
+      refreshing,
+      error,
+      acknowledge,
+      deleteIncident,
+      deleteAllHistory,
+      getIncident,
+      refresh,
+    }),
+    [
+      incidents,
+      history,
+      loading,
+      refreshing,
+      error,
+      acknowledge,
+      deleteIncident,
+      deleteAllHistory,
+      getIncident,
+      refresh,
+    ]
   );
 
   return <IncidentsContext.Provider value={value}>{children}</IncidentsContext.Provider>;

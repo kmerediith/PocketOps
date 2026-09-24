@@ -25,6 +25,7 @@ function PaperHeader({ navigation, route, options, back }) {
     <Appbar.Header elevated>
       {back ? <Appbar.BackAction onPress={navigation.goBack} /> : null}
       <Appbar.Content title={title} titleStyle={{ letterSpacing: 1 }} />
+      {options.headerRight ? options.headerRight({ navigation }) : null}
     </Appbar.Header>
   );
 }

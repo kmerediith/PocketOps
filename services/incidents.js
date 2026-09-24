@@ -18,6 +18,7 @@ async function request(path, options) {
     throw new Error(`${options?.method ?? 'GET'} ${path} failed (${response.status}) ${detail}`.trim());
   }
 
+  if (response.status === 204) return null;
   return response.json();
 }
 
@@ -36,6 +37,18 @@ export function fetchIncident(incidentId) {
 export function acknowledgeIncident(incidentId) {
   return request(`/api/incidents/${encodeURIComponent(incidentId)}/acknowledge`, {
     method: 'POST',
+  });
+}
+
+export function deleteIncident(incidentId) {
+  return request(`/api/incidents/${encodeURIComponent(incidentId)}`, {
+    method: 'DELETE',
+  });
+}
+
+export function deleteAllHistory() {
+  return request('/api/incidents/history', {
+    method: 'DELETE',
   });
 }
 

@@ -48,6 +48,23 @@ export function createApp({ db = openDatabase() } = {}) {
     res.status(201).json(incident);
   });
 
+  // Clears the whole resolved history in one shot. Must be registered before
+  // the /:id route below, or Express would match "history" as an incident id.
+  app.delete('/api/incidents/history', (_req, res) => {
+    const { deletedCount } = repo.deleteAllResolved();
+    res.json({ deletedCount });
+  });
+
+  // Only resolved incidents can be deleted — an active one must be acknowledged first.
+  app.delete('/api/incidents/:id', (req, res) => {
+    const { error } = repo.delete(req.params.id);
+    if (error === 'not_found') return res.status(404).json({ error: 'incident not found' });
+    if (error === 'not_resolved') {
+      return res.status(409).json({ error: 'only resolved incidents can be deleted' });
+    }
+    res.status(204).end();
+  });
+
   // Drops one randomised incident into the queue — handy for demos and tests
   // without composing a request body.
   app.post('/api/incidents/simulate', (_req, res) => {
