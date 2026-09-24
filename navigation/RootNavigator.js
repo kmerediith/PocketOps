@@ -1,7 +1,12 @@
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Appbar, useTheme } from 'react-native-paper';
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItemList,
+} from '@react-navigation/drawer';
+import { Appbar, Divider, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { navigationTheme } from '../theme';
 import { IncidentsScreen } from '../screens/IncidentsScreen';
@@ -10,20 +15,24 @@ import { HistoryScreen } from '../screens/HistoryScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
-const TAB_ICONS = {
+const NAV_ICONS = {
   Incidents: 'alert-circle',
   History: 'check-all',
   Settings: 'cog',
 };
 
-// Material top app bar for the native stack.
+// Material top app bar for the native stack. Screens that live behind the
+// drawer get a hamburger button; pushed screens (e.g. IncidentDetail) get a
+// back button instead.
 function PaperHeader({ navigation, route, options, back }) {
   const title = options.title ?? route.name;
+  const canOpenDrawer = !back && typeof navigation.openDrawer === 'function';
   return (
     <Appbar.Header elevated>
       {back ? <Appbar.BackAction onPress={navigation.goBack} /> : null}
+      {canOpenDrawer ? <Appbar.Action icon="menu" onPress={() => navigation.openDrawer()} /> : null}
       <Appbar.Content title={title} titleStyle={{ letterSpacing: 1 }} />
       {options.headerRight ? options.headerRight({ navigation }) : null}
     </Appbar.Header>
@@ -31,39 +40,59 @@ function PaperHeader({ navigation, route, options, back }) {
 }
 
 const renderPaperHeader = (props) => <PaperHeader {...props} />;
-const renderTabIcon = (route) => ({ color, size }) => (
-  <MaterialCommunityIcons name={TAB_ICONS[route.name]} size={size} color={color} />
+const renderDrawerIcon = (routeName) => ({ color, size }) => (
+  <MaterialCommunityIcons name={NAV_ICONS[routeName]} size={size} color={color} />
 );
 
-function MainTabs() {
+// Branded header above the list of drawer items.
+function DrawerContent(props) {
   const theme = useTheme();
   return (
-    <Tab.Navigator
+    <DrawerContentScrollView {...props} style={{ backgroundColor: theme.colors.surface }}>
+      <View style={{ paddingHorizontal: 20, paddingVertical: 24 }}>
+        <Text
+          variant="titleLarge"
+          style={{ color: theme.colors.onSurface, fontWeight: 'bold', letterSpacing: 1 }}
+        >
+          POCKET OPS
+        </Text>
+      </View>
+      <Divider />
+      <DrawerItemList {...props} />
+    </DrawerContentScrollView>
+  );
+}
+
+const renderDrawerContent = (props) => <DrawerContent {...props} />;
+
+function MainDrawer() {
+  const theme = useTheme();
+  return (
+    <Drawer.Navigator
+      drawerContent={renderDrawerContent}
       screenOptions={({ route }) => ({
         header: renderPaperHeader,
         sceneStyle: { backgroundColor: theme.colors.background },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.outlineVariant,
-        },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 1 },
-        tabBarIcon: renderTabIcon(route),
+        drawerActiveTintColor: theme.colors.primary,
+        drawerInactiveTintColor: theme.colors.onSurfaceVariant,
+        drawerActiveBackgroundColor: theme.colors.surfaceVariant,
+        drawerStyle: { backgroundColor: theme.colors.surface, width: 260 },
+        drawerLabelStyle: { fontWeight: '600', letterSpacing: 0.5 },
+        drawerIcon: renderDrawerIcon(route.name),
       })}
     >
-      <Tab.Screen
+      <Drawer.Screen
         name="Incidents"
         component={IncidentsScreen}
-        options={{ title: 'Pocket Ops', tabBarLabel: 'Incidents' }}
+        options={{ title: 'Pocket Ops', drawerLabel: 'Incidents' }}
       />
-      <Tab.Screen
+      <Drawer.Screen
         name="History"
         component={HistoryScreen}
-        options={{ title: 'Resolved', tabBarLabel: 'History' }}
+        options={{ title: 'Resolved', drawerLabel: 'History' }}
       />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-    </Tab.Navigator>
+      <Drawer.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+    </Drawer.Navigator>
   );
 }
 
@@ -77,7 +106,7 @@ export function RootNavigator() {
           contentStyle: { backgroundColor: theme.colors.background },
         }}
       >
-        <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+        <Stack.Screen name="Main" component={MainDrawer} options={{ headerShown: false }} />
         <Stack.Screen
           name="IncidentDetail"
           component={IncidentDetailScreen}

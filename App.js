@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,13 +13,15 @@ const paperSettings = {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <PaperProvider theme={paperTheme} settings={paperSettings}>
-        <IncidentsProvider>
-          <StatusBar style="light" />
-          <RootNavigator />
-        </IncidentsProvider>
-      </PaperProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <PaperProvider theme={paperTheme} settings={paperSettings}>
+          <IncidentsProvider>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </IncidentsProvider>
+        </PaperProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

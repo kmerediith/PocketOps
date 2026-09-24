@@ -3,12 +3,16 @@ import { StyleSheet } from 'react-native';
 import { Card, Divider, List, Switch, Text } from 'react-native-paper';
 import { spacing } from '../theme';
 
+const renderSwitch = (value, onValueChange) => () => (
+  <Switch value={value} onValueChange={onValueChange} />
+);
+
 const Row = ({ label, description, value, onValueChange }) => (
   <List.Item
     title={label}
     description={description}
     descriptionNumberOfLines={2}
-    right={() => <Switch value={value} onValueChange={onValueChange} />}
+    right={renderSwitch(value, onValueChange)}
     onPress={() => onValueChange(!value)}
   />
 );
