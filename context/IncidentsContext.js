@@ -1,135 +1,195 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import {
   acknowledgeIncident,
   deleteAllHistory as deleteAllHistoryRequest,
   deleteIncident as deleteIncidentRequest,
   fetchIncidentHistory,
   fetchIncidentQueue,
+  isRejection,
 } from '../services/incidents';
+import { STORAGE_KEYS, loadJSON, saveJSON } from '../services/storage';
+import { applyOp, replay } from '../services/outbox';
 
 const IncidentsContext = createContext(null);
 
 const POLL_MS = 10_000;
 
-// Shares the incident queue + resolved history across every screen, kept in sync
-// with the API by polling every POLL_MS and on manual refresh.
+const EMPTY_LISTS = { incidents: [], history: [] };
+
+function sendOp(op) {
+  switch (op.type) {
+    case 'acknowledge':
+      return acknowledgeIncident(op.incidentId);
+    case 'delete':
+      return deleteIncidentRequest(op.incidentId);
+    case 'deleteAll':
+      return deleteAllHistoryRequest();
+    default:
+      return Promise.resolve();
+  }
+}
+
+let opCounter = 0;
+const makeOpId = () => `${Date.now()}-${opCounter++}`;
+
+// Shares the incident queue + resolved history across every screen.
+//
+// Offline support:
+// - The last lists are cached on-device and restored at launch.
+// - Acknowledge/delete are applied locally at once and queued in a persisted
+//   outbox, which is flushed in order on every sync (poll, refresh, app
+//   foreground, or right after the action).
+// - Conflicts: the server wins. A 4xx (e.g. the incident was deleted elsewhere)
+//   drops the queued op; network errors and 5xx keep it for the next attempt.
 export function IncidentsProvider({ children }) {
-  const [incidents, setIncidents] = useState([]);
-  const [history, setHistory] = useState([]);
+  const [lists, setLists] = useState(EMPTY_LISTS);
+  const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [online, setOnline] = useState(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
-  // Guards: skip overlapping polls, and don't let a poll resurrect an incident
-  // that's mid-acknowledge.
-  const inFlight = useRef(false);
-  const pendingAcks = useRef(new Set());
+  // The outbox lives in a ref so sync always sees the latest ops; the count is
+  // mirrored into state for the UI.
+  const outbox = useRef([]);
+  const syncing = useRef(false);
+  const rerun = useRef(false);
 
-  const load = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    try {
-      const [queue, resolved] = await Promise.all([
-        fetchIncidentQueue(),
-        fetchIncidentHistory(),
-      ]);
-      setIncidents(queue.filter((incident) => !pendingAcks.current.has(incident.incidentId)));
-      setHistory(resolved);
-      setError(null);
-    } catch (err) {
-      setError(err);
-    } finally {
-      inFlight.current = false;
-    }
+  const writeOutbox = useCallback((ops) => {
+    outbox.current = ops;
+    setPendingCount(ops.length);
+    saveJSON(STORAGE_KEYS.outbox, ops);
   }, []);
 
+  const flushOutbox = useCallback(async () => {
+    while (outbox.current.length > 0) {
+      const op = outbox.current[0];
+      try {
+        await sendOp(op);
+      } catch (err) {
+        if (!isRejection(err)) throw err;
+        console.warn(`Server rejected queued ${op.type} for ${op.incidentId ?? 'history'}`, err);
+      }
+      writeOutbox(outbox.current.filter((queued) => queued.id !== op.id));
+    }
+  }, [writeOutbox]);
+
+  const syncOnce = useCallback(async () => {
+    try {
+      await flushOutbox();
+      const [queue, resolved] = await Promise.all([fetchIncidentQueue(), fetchIncidentHistory()]);
+      // Re-apply anything queued while the fetch was in flight.
+      setLists(replay({ incidents: queue, history: resolved }, outbox.current));
+      const now = Date.now();
+      setLastSyncedAt(now);
+      saveJSON(STORAGE_KEYS.lastSyncedAt, now);
+      setOnline(true);
+      setError(null);
+    } catch (err) {
+      setOnline(false);
+      setError(err);
+    }
+  }, [flushOutbox]);
+
+  // Serialised: a sync requested mid-sync runs once more when the current one ends.
+  const sync = useCallback(async () => {
+    if (syncing.current) {
+      rerun.current = true;
+      return;
+    }
+    syncing.current = true;
+    try {
+      do {
+        rerun.current = false;
+        await syncOnce();
+      } while (rerun.current);
+    } finally {
+      syncing.current = false;
+    }
+  }, [syncOnce]);
+
+  // Restore the cache, then start syncing.
   useEffect(() => {
     let cancelled = false;
+    let timer;
 
-    load().finally(() => {
-      if (!cancelled) setLoading(false);
-    });
+    (async () => {
+      const [incidents, history, syncedAt, ops] = await Promise.all([
+        loadJSON(STORAGE_KEYS.incidents, []),
+        loadJSON(STORAGE_KEYS.history, []),
+        loadJSON(STORAGE_KEYS.lastSyncedAt, null),
+        loadJSON(STORAGE_KEYS.outbox, []),
+      ]);
+      if (cancelled) return;
 
-    const timer = setInterval(load, POLL_MS);
+      setLists({ incidents, history });
+      setLastSyncedAt(syncedAt);
+      writeOutbox(ops);
+      setHydrated(true);
+      if (syncedAt != null) setLoading(false);
+
+      await sync();
+      if (cancelled) return;
+      setLoading(false);
+      timer = setInterval(sync, POLL_MS);
+    })();
+
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [load]);
+  }, [sync, writeOutbox]);
+
+  // Catch up as soon as the app returns to the foreground.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') sync();
+    });
+    return () => subscription.remove();
+  }, [sync]);
+
+  // Keep the on-device cache in step with what's on screen.
+  useEffect(() => {
+    if (!hydrated) return;
+    saveJSON(STORAGE_KEYS.incidents, lists.incidents);
+    saveJSON(STORAGE_KEYS.history, lists.history);
+  }, [lists, hydrated]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await load();
+      await sync();
     } finally {
       setRefreshing(false);
     }
-  }, [load]);
+  }, [sync]);
 
-  const acknowledge = useCallback(async (incidentId) => {
-    let removed;
+  const enqueue = useCallback(
+    (op) => {
+      const queued = { ...op, id: makeOpId(), at: Date.now() };
+      setLists((current) => applyOp(current, queued));
+      writeOutbox([...outbox.current, queued]);
+      sync();
+    },
+    [sync, writeOutbox]
+  );
 
-    // Optimistic: move the incident from the queue into history immediately.
-    setIncidents((current) => {
-      removed = current.find((incident) => incident.incidentId === incidentId);
-      return current.filter((incident) => incident.incidentId !== incidentId);
-    });
-    if (!removed) return;
+  const acknowledge = useCallback(
+    async (incidentId) => enqueue({ type: 'acknowledge', incidentId }),
+    [enqueue]
+  );
 
-    pendingAcks.current.add(incidentId);
-    const optimistic = { ...removed, resolvedAt: Date.now() };
-    setHistory((current) => [optimistic, ...current]);
+  const deleteIncident = useCallback(
+    async (incidentId) => enqueue({ type: 'delete', incidentId }),
+    [enqueue]
+  );
 
-    try {
-      const confirmed = await acknowledgeIncident(incidentId);
-      // Adopt the server's copy (authoritative resolvedAt).
-      setHistory((current) =>
-        current.map((item) => (item.incidentId === incidentId ? confirmed : item))
-      );
-    } catch (err) {
-      // Roll back on failure.
-      setHistory((current) => current.filter((item) => item.incidentId !== incidentId));
-      setIncidents((current) => [removed, ...current]);
-      setError(err);
-    } finally {
-      pendingAcks.current.delete(incidentId);
-    }
-  }, []);
+  const deleteAllHistory = useCallback(async () => enqueue({ type: 'deleteAll' }), [enqueue]);
 
-  const deleteIncident = useCallback(async (incidentId) => {
-    let removed;
-
-    // Optimistic: drop it from history immediately, restore it on failure.
-    setHistory((current) => {
-      removed = current.find((incident) => incident.incidentId === incidentId);
-      return current.filter((incident) => incident.incidentId !== incidentId);
-    });
-    if (!removed) return;
-
-    try {
-      await deleteIncidentRequest(incidentId);
-    } catch (err) {
-      setHistory((current) => [removed, ...current]);
-      setError(err);
-    }
-  }, []);
-
-  const deleteAllHistory = useCallback(async () => {
-    // Optimistic: clear the whole list immediately, restore it on failure.
-    let previous;
-    setHistory((current) => {
-      previous = current;
-      return [];
-    });
-    if (previous.length === 0) return;
-
-    try {
-      await deleteAllHistoryRequest();
-    } catch (err) {
-      setHistory(previous);
-      setError(err);
-    }
-  }, []);
+  const { incidents, history } = lists;
 
   const getIncident = useCallback(
     (incidentId) =>
@@ -146,6 +206,9 @@ export function IncidentsProvider({ children }) {
       loading,
       refreshing,
       error,
+      online,
+      lastSyncedAt,
+      pendingCount,
       acknowledge,
       deleteIncident,
       deleteAllHistory,
@@ -158,6 +221,9 @@ export function IncidentsProvider({ children }) {
       loading,
       refreshing,
       error,
+      online,
+      lastSyncedAt,
+      pendingCount,
       acknowledge,
       deleteIncident,
       deleteAllHistory,

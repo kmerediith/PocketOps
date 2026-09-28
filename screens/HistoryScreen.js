@@ -1,8 +1,9 @@
 import { useLayoutEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
-import { Appbar, Button, Dialog, Portal, Surface, Text, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Appbar, Button, Dialog, Portal, Text, useTheme } from 'react-native-paper';
 import { useIncidents } from '../context/IncidentsContext';
 import { IncidentFeed } from '../components/IncidentFeed';
+import { SyncBanner } from '../components/SyncBanner';
 
 export function HistoryScreen({ navigation }) {
   const { history, refreshing, refresh, deleteIncident, deleteAllHistory } = useIncidents();
@@ -31,11 +32,13 @@ export function HistoryScreen({ navigation }) {
   };
 
   return (
-    <Surface style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SyncBanner />
       <IncidentFeed
         incidents={history}
         headerLabel={history.length > 0 ? `${history.length} resolved` : undefined}
         emptyText="Nothing acknowledged yet."
+        emptyIcon="history"
         onSelect={(incidentId) => navigation.navigate('IncidentDetail', { incidentId })}
         onDelete={setPendingDeleteId}
         onRefresh={refresh}
@@ -74,7 +77,7 @@ export function HistoryScreen({ navigation }) {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </Surface>
+    </View>
   );
 }
 

@@ -1,24 +1,41 @@
 import { StyleSheet, View } from 'react-native';
 import { Card, IconButton, Text, useTheme } from 'react-native-paper';
-import { severityColor, spacing } from '../theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { severityColor, spacing, withAlpha } from '../theme';
 import { AcknowledgeButton } from './AcknowledgeButton';
 
+// Tinted pill that names the incident's severity (or its resolved state).
+const SeverityBadge = ({ color, icon, label }) => (
+  <View style={[styles.badge, { backgroundColor: withAlpha(color, 0.16), borderColor: withAlpha(color, 0.4) }]}>
+    <MaterialCommunityIcons name={icon} size={14} color={color} />
+    <Text variant="labelSmall" style={[styles.badgeLabel, { color }]}>
+      {label}
+    </Text>
+  </View>
+);
+
 const CardFooter = ({ onAcknowledge, onDelete, acknowledged }) => {
+  const theme = useTheme();
   if (onAcknowledge) {
     return <AcknowledgeButton onPress={onAcknowledge} style={styles.footerButton} />;
   }
   if (acknowledged) {
     return (
-      <View style={styles.resolvedRow}>
-        <Text variant="labelSmall" style={styles.resolvedLabel}>
-          ACKNOWLEDGED
-        </Text>
+      <View style={[styles.resolvedRow, { borderTopColor: theme.colors.outlineVariant }]}>
+        <View style={styles.inline}>
+          <MaterialCommunityIcons name="check-circle" size={16} color={theme.colors.onSurfaceVariant} />
+          <Text variant="labelMedium" style={[styles.resolvedLabel, { color: theme.colors.onSurfaceVariant }]}>
+            ACKNOWLEDGED
+          </Text>
+        </View>
         {onDelete && (
           <IconButton
             icon="trash-can-outline"
-            size={18}
+            size={20}
+            iconColor={theme.colors.error}
             onPress={onDelete}
             style={styles.deleteIcon}
+            accessibilityLabel="Delete incident"
           />
         )}
       </View>
@@ -40,33 +57,58 @@ export const AlertCard = ({
 }) => {
   const theme = useTheme();
   const accent = acknowledged ? theme.colors.outline : severityColor(theme, severity);
+  const muted = theme.colors.onSurfaceVariant;
 
   return (
     <Card
-      mode="contained"
+      mode="elevated"
+      elevation={2}
       onPress={onPress}
       disabled={!onPress}
       style={[
         styles.card,
-        { borderLeftColor: accent },
-        acknowledged && styles.cardResolved,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: acknowledged ? theme.colors.outlineVariant : withAlpha(accent, 0.45),
+          borderLeftColor: accent,
+        },
       ]}
     >
-      <Card.Content>
+      <Card.Content style={styles.content}>
         <View style={styles.metaRow}>
-          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            {incidentId}
-          </Text>
-          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            {timeElapsed}
-          </Text>
+          {acknowledged ? (
+            <SeverityBadge color={accent} icon="check" label="RESOLVED" />
+          ) : (
+            <SeverityBadge
+              color={accent}
+              icon={severity === 'high' ? 'alert' : 'alert-octagon'}
+              label={severity.toUpperCase()}
+            />
+          )}
+          <View style={styles.inline}>
+            <MaterialCommunityIcons name="clock-outline" size={14} color={muted} />
+            <Text variant="labelMedium" style={[styles.metaText, { color: muted }]}>
+              {timeElapsed}
+            </Text>
+          </View>
         </View>
 
-        <Text variant="headlineSmall" style={styles.service}>
+        <Text
+          variant="titleLarge"
+          style={[styles.service, acknowledged && { color: muted }]}
+          numberOfLines={1}
+        >
           {service}
         </Text>
 
-        <Text variant="bodyLarge" style={[styles.summary, { color: accent }]}>
+        <Text variant="labelMedium" style={[styles.incidentId, { color: muted }]}>
+          {incidentId}
+        </Text>
+
+        <Text
+          variant="bodyLarge"
+          style={[styles.summary, { color: acknowledged ? muted : theme.colors.onSurface }]}
+        >
           {summary}
         </Text>
 
@@ -80,23 +122,50 @@ const styles = StyleSheet.create({
   card: {
     marginVertical: spacing.sm,
     marginHorizontal: spacing.md,
-    borderLeftWidth: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderLeftWidth: 5,
   },
-  cardResolved: {
-    opacity: 0.7,
+  content: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  inline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    marginLeft: spacing.xs,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  badgeLabel: {
+    marginLeft: spacing.xs,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   service: {
     fontWeight: 'bold',
+  },
+  incidentId: {
+    marginTop: 2,
     marginBottom: spacing.sm,
+    letterSpacing: 0.5,
   },
   summary: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     lineHeight: 22,
   },
   footerButton: {
@@ -106,13 +175,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: spacing.xs,
+    minHeight: 40,
   },
   resolvedLabel: {
     letterSpacing: 1.5,
-    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   deleteIcon: {
     margin: 0,
-    marginTop: -spacing.sm,
   },
 });

@@ -15,12 +15,20 @@ async function request(path, options) {
     } catch {
       // response had no JSON body
     }
-    throw new Error(`${options?.method ?? 'GET'} ${path} failed (${response.status}) ${detail}`.trim());
+    const error = new Error(
+      `${options?.method ?? 'GET'} ${path} failed (${response.status}) ${detail}`.trim()
+    );
+    error.status = response.status;
+    throw error;
   }
 
   if (response.status === 204) return null;
   return response.json();
 }
+
+// True when the server answered and refused the request (4xx) — retrying won't
+// help. Network failures (no status) and 5xx are worth retrying later.
+export const isRejection = (err) => err?.status >= 400 && err.status < 500;
 
 export function fetchIncidentQueue() {
   return request('/api/incidents');

@@ -1,7 +1,9 @@
-import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Card, Divider, List, Switch, Text } from 'react-native-paper';
 import { spacing } from '../theme';
+import { STORAGE_KEYS, usePersistentState } from '../services/storage';
+
+const DEFAULT_SETTINGS = { push: true, criticalOnly: true, sound: false };
 
 const renderSwitch = (value, onValueChange) => () => (
   <Switch value={value} onValueChange={onValueChange} />
@@ -18,9 +20,12 @@ const Row = ({ label, description, value, onValueChange }) => (
 );
 
 export function SettingsScreen() {
-  const [push, setPush] = useState(true);
-  const [criticalOnly, setCriticalOnly] = useState(true);
-  const [sound, setSound] = useState(false);
+  const [settings, setSettings] = usePersistentState(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+  const { push, criticalOnly, sound } = { ...DEFAULT_SETTINGS, ...settings };
+  const setter = (key) => (value) => setSettings((current) => ({ ...current, [key]: value }));
+  const setPush = setter('push');
+  const setCriticalOnly = setter('criticalOnly');
+  const setSound = setter('sound');
 
   return (
     <List.Section style={styles.container}>

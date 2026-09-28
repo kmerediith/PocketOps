@@ -55,23 +55,34 @@ export function IncidentDetailScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Field label="Incident" value={incident.incidentId} />
-      <Divider />
-      <Field label="Asset" value={incident.service} valueStyle={styles.service} />
-      <Divider />
-      <Field
-        label="Fault"
-        value={incident.summary}
-        valueStyle={[styles.summary, { color: faultColor }]}
-      />
-      <Divider />
-      <Field label="Triggered" value={incident.timeElapsed} />
-      <Divider />
-      <Field
-        label="Status"
-        value={resolved ? 'Acknowledged' : `Active — ${severity} severity`}
-        valueStyle={[styles.status, { color: statusColor }]}
-      />
+      <View
+        style={[
+          styles.panel,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.outlineVariant,
+            borderLeftColor: resolved ? theme.colors.outline : faultColor,
+          },
+        ]}
+      >
+        <Field label="Incident" value={incident.incidentId} />
+        <Divider />
+        <Field label="Asset" value={incident.service} valueStyle={styles.service} />
+        <Divider />
+        <Field
+          label="Fault"
+          value={incident.summary}
+          valueStyle={[styles.summary, { color: faultColor }]}
+        />
+        <Divider />
+        <Field label="Triggered" value={incident.timeElapsed} />
+        <Divider />
+        <Field
+          label="Status"
+          value={resolved ? 'Acknowledged' : `Active — ${severity} severity`}
+          valueStyle={[styles.status, { color: statusColor }]}
+        />
+      </View>
 
       {!resolved && (
         <AcknowledgeButton onPress={onAcknowledge} style={styles.acknowledgeButton} />
@@ -121,6 +132,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
+  },
+  panel: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderLeftWidth: 5,
+    paddingHorizontal: spacing.md,
   },
   field: {
     marginVertical: spacing.md,

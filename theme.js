@@ -3,10 +3,12 @@ import { DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 
 // Shared design tokens for Pocket Ops.
 export const colors = {
-  background: '#000000',
-  surface: '#1E1E1E',
-  textPrimary: '#FFFFFF',
-  textMuted: '#A0A0A0',
+  background: '#0B0D12',
+  surface: '#1A1E27',
+  surfaceRaised: '#252B38',
+  border: '#343B4D',
+  textPrimary: '#F5F7FA',
+  textMuted: '#9AA3B5',
   critical: '#FF4C4C',
   warning: '#FFC24B',
   action: '#007AFF',
@@ -32,19 +34,22 @@ export const paperTheme = {
     onBackground: colors.textPrimary,
     surface: colors.surface,
     onSurface: colors.textPrimary,
-    surfaceVariant: colors.surface,
+    surfaceVariant: colors.surfaceRaised,
     onSurfaceVariant: colors.textMuted,
     error: colors.critical,
     onError: '#FFFFFF',
     warning: colors.warning,
     onWarning: '#000000',
     outline: colors.textMuted,
-    outlineVariant: colors.surface,
+    outlineVariant: colors.border,
     elevation: {
       ...MD3DarkTheme.colors.elevation,
+      level0: colors.background,
       level1: colors.surface,
       level2: colors.surface,
-      level3: colors.surface,
+      level3: colors.surfaceRaised,
+      level4: colors.surfaceRaised,
+      level5: colors.surfaceRaised,
     },
   },
 };
@@ -58,6 +63,10 @@ const { DarkTheme: adaptedNavigationTheme } = adaptNavigationTheme({
 // Maps an incident severity to its accent color from the active Paper theme.
 export const severityColor = (theme, severity) =>
   severity === 'high' ? theme.colors.warning : theme.colors.error;
+
+// Appends an alpha channel to a #RRGGBB color, for tinted badge backgrounds.
+export const withAlpha = (hex, alpha) =>
+  `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
 
 export const navigationTheme = {
   ...adaptedNavigationTheme,
