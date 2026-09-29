@@ -1,7 +1,15 @@
+/**
+ * @file Data access for incidents: queries, validation and the wire shape.
+ * @author Kyle Meredith
+ */
 import { formatRelative } from './relative-time.js';
 import { DEFAULT_REGION, REGIONS, isRegion } from './regions.js';
 
 const SEVERITIES = new Set(['critical', 'high']);
+
+// Id counter fallback when the table has no INC-#### ids, so new ids continue
+// after the seed data.
+const LAST_SEED_ID = 9952;
 
 // Maps a DB row to the wire shape the app consumes. Severity drives colour on
 // the client, `timeElapsed` is a display string, `resolvedAt` is only present
@@ -20,6 +28,11 @@ function toWire(row) {
   return incident;
 }
 
+/**
+ * Wraps a database in the incident operations the routes need. Statements are
+ * prepared once up front; every method returns wire-shaped incidents.
+ * @param {import('better-sqlite3').Database} db An opened database (see openDatabase).
+ */
 export function createRepository(db) {
   const statements = {
     active: db.prepare(`
@@ -82,7 +95,7 @@ export function createRepository(db) {
       if (!isRegion(region)) {
         return { error: `region must be one of: ${REGIONS.map((r) => r.code).join(', ')}` };
       }
-      const nextNumber = (statements.maxSuffix.get().max ?? 9952) + 1;
+      const nextNumber = (statements.maxSuffix.get().max ?? LAST_SEED_ID) + 1;
       const incidentId = `INC-${nextNumber}`;
       statements.insert.run({
         incidentId,

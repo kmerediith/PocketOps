@@ -1,3 +1,7 @@
+/**
+ * @file Server entry point: starts the HTTP API and the incident generator.
+ * @author Kyle Meredith
+ */
 import { createApp } from './app.js';
 import { startIncidentGenerator } from './generator.js';
 

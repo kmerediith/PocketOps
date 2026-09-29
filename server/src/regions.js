@@ -1,3 +1,7 @@
+/**
+ * @file Data center regions an incident can belong to.
+ * @author Kyle Meredith
+ */
 // Data center regions an incident can belong to. Codes follow AWS region
 // naming; `name` is the human label shown alongside the code.
 export const REGIONS = [
@@ -11,4 +15,8 @@ export const REGIONS = [
 // region column.
 export const DEFAULT_REGION = 'us-east-1';
 
-export const isRegion = (code) => REGIONS.some((region) => region.code === code);
+/**
+ * @param {string} code
+ * @returns {boolean} True if `code` is one of REGIONS.
+ */
+export const isRegion =(code) => REGIONS.some((region) => region.code === code);

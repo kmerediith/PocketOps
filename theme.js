@@ -1,8 +1,14 @@
+/**
+ * @file Design tokens plus the Paper and React Navigation themes built from
+ * them, and small color helpers used across the UI.
+ * @author Kyle Meredith
+ */
 import { MD3DarkTheme, adaptNavigationTheme } from 'react-native-paper';
 import { DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 
-// Shared design tokens for Pocket Ops — AWS palette: squid ink (#252F3E)
-// surfaces with orange (#FF9900) as the action color.
+// AWS palette: squid ink (#252F3E) surfaces with orange (#FF9900) as the
+// action color. Components should read colors from the Paper theme
+// (useTheme) rather than importing these directly.
 export const colors = {
   background: '#161E2B',
   surface: '#252F3E',
@@ -64,19 +70,30 @@ export const paperTheme = {
   },
 };
 
+/**
+ * Maps an incident severity to its accent color. Anything other than 'high'
+ * is treated as critical.
+ * @param {object} theme Active Paper theme (from useTheme).
+ * @param {'critical'|'high'} severity
+ * @returns {string} Hex color.
+ */
+export const severityColor = (theme, severity) =>
+  severity === 'high' ? theme.colors.warning : theme.colors.error;
+
+/**
+ * Appends an alpha channel to a #RRGGBB color, for tinted backgrounds.
+ * @param {string} hex Six-digit hex color, e.g. '#FF9900'.
+ * @param {number} alpha Opacity from 0 to 1.
+ * @returns {string} Eight-digit #RRGGBBAA color.
+ */
+export const withAlpha = (hex, alpha) =>
+  `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+
 // React Navigation theme kept in sync with the Paper theme.
 const { DarkTheme: adaptedNavigationTheme } = adaptNavigationTheme({
   reactNavigationDark: NavigationDarkTheme,
   materialDark: paperTheme,
 });
-
-// Maps an incident severity to its accent color from the active Paper theme.
-export const severityColor = (theme, severity) =>
-  severity === 'high' ? theme.colors.warning : theme.colors.error;
-
-// Appends an alpha channel to a #RRGGBB color, for tinted badge backgrounds.
-export const withAlpha = (hex, alpha) =>
-  `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
 
 export const navigationTheme = {
   ...adaptedNavigationTheme,

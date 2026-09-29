@@ -1,14 +1,26 @@
-// Templates the incident generator draws from. Each entry is a function so the
-// rack / node identifiers can be randomised on every call.
+/**
+ * @file Randomised incident templates for the background generator.
+ * @author Kyle Meredith
+ */
 
 const RACKS = ['A03', 'B14', 'C07', 'D11', 'E02', 'F09', 'G05'];
 const ROWS = ['Row 1', 'Row 2', 'Row 3', 'Row 4'];
 const NODES = ['db-node-beta', 'compute-041', 'compute-118', 'cache-07', 'edge-12', 'api-33'];
 
-const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+/**
+ * Returns a uniformly random element of a non-empty array.
+ * @template T
+ * @param {T[]} arr
+ * @returns {T}
+ */
+export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
 const rack = () => `Rack ${pick(RACKS)}`;
 const node = () => `${rack()} · Node ${pick(NODES)}`;
 
+// Each entry is a function so the rack / node identifiers are randomised on
+// every call. Returns { service, severity, summary }; region is added by the
+// generator.
 export const INCIDENT_TEMPLATES = [
   () => ({
     service: node(),

@@ -1,7 +1,10 @@
 # PocketOps API
 
-Small Express + SQLite service backing the PocketOps app. Replaces the mock
-incident source with a real, persistent one.
+Small Express + SQLite service backing the PocketOps app: a persistent
+incident queue, acknowledgement history, and a background generator that keeps
+new incidents arriving.
+
+Author: Kyle Meredith
 
 ## Run
 
@@ -45,6 +48,10 @@ generates one on demand.
 | `POST /api/incidents/:id/acknowledge`| mark acknowledged (idempotent)               |
 | `POST /api/incidents`                | create one: `{ service, severity, summary, region? }` |
 | `POST /api/incidents/simulate`       | generate one randomised incident now         |
+| `DELETE /api/incidents/:id`          | delete a resolved incident (409 if active)   |
+| `DELETE /api/incidents/history`      | delete all resolved: `{ deletedCount }`      |
+
+Errors are JSON: `{ "error": "..." }` with a 4xx/5xx status.
 
 `severity` is `"critical"` or `"high"`. `region` is one of the codes from
 `/api/regions` (`us-east-1`, `us-west-2`, `eu-west-1`, `ap-southeast-1`) and

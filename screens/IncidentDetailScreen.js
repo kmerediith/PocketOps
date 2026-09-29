@@ -1,11 +1,18 @@
+/**
+ * @file Full-page view of a single incident, with acknowledge (active) or
+ * delete (resolved) actions.
+ * @author Kyle Meredith
+ */
 import { useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Dialog, Divider, Portal, Text, useTheme } from 'react-native-paper';
+import { Button, Divider, Text, useTheme } from 'react-native-paper';
 import { severityColor, spacing } from '../theme';
 import { useIncidents } from '../context/IncidentsContext';
 import { useRegionFilter } from '../context/RegionFilterContext';
 import { AcknowledgeButton } from '../components/AcknowledgeButton';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
+// One labelled row in the detail panel.
 const Field = ({ label, value, valueStyle }) => (
   <View style={styles.field}>
     <Text variant="labelMedium" style={styles.fieldLabel}>
@@ -17,6 +24,11 @@ const Field = ({ label, value, valueStyle }) => (
   </View>
 );
 
+/**
+ * Shows one incident by `route.params.incidentId`. Reads from the shared
+ * store, so it shows a fallback message if the incident disappears (e.g.
+ * deleted on another device) while the screen is open.
+ */
 export function IncidentDetailScreen({ route, navigation }) {
   const { incidentId } = route.params;
   const { getIncident, acknowledge, deleteIncident } = useIncidents();
@@ -43,6 +55,7 @@ export function IncidentDetailScreen({ route, navigation }) {
   const severity = incident.severity ?? 'critical';
   const faultColor = severityColor(theme, severity);
   const statusColor = resolved ? theme.colors.onSurfaceVariant : faultColor;
+  const regionLabel = regionName(incident.region);
 
   const onAcknowledge = async () => {
     await acknowledge(incident.incidentId);
@@ -75,11 +88,7 @@ export function IncidentDetailScreen({ route, navigation }) {
           <>
             <Field
               label="Region"
-              value={
-                regionName(incident.region)
-                  ? `${incident.region} · ${regionName(incident.region)}`
-                  : incident.region
-              }
+              value={regionLabel ? `${incident.region} · ${regionLabel}` : incident.region}
             />
             <Divider />
           </>
@@ -115,22 +124,13 @@ export function IncidentDetailScreen({ route, navigation }) {
         </Button>
       )}
 
-      <Portal>
-        <Dialog visible={confirmingDelete} onDismiss={() => setConfirmingDelete(false)}>
-          <Dialog.Title>Delete incident?</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodyMedium">
-              {incident.incidentId} will be permanently removed from history.
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setConfirmingDelete(false)}>Cancel</Button>
-            <Button textColor={theme.colors.error} onPress={onDelete}>
-              Delete
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      <ConfirmDialog
+        visible={confirmingDelete}
+        title="Delete incident?"
+        message={`${incident.incidentId} will be permanently removed from history.`}
+        onConfirm={onDelete}
+        onDismiss={() => setConfirmingDelete(false)}
+      />
     </ScrollView>
   );
 }

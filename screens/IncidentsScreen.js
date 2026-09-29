@@ -1,3 +1,7 @@
+/**
+ * @file Home screen: the active incident queue, grouped by severity.
+ * @author Kyle Meredith
+ */
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useIncidents } from '../context/IncidentsContext';
@@ -8,6 +12,7 @@ import { SyncBanner } from '../components/SyncBanner';
 
 const countLabel = (count) => `${count} active ${count === 1 ? 'incident' : 'incidents'}`;
 
+/** Lists active incidents, filtered by the shared region selection. */
 export function IncidentsScreen({ navigation }) {
   const { incidents, loading, refreshing, error, acknowledge, refresh } = useIncidents();
   const { filterByRegion, isFiltering } = useRegionFilter();

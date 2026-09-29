@@ -1,3 +1,8 @@
+/**
+ * @file App navigation: a native stack whose base screen is a drawer
+ * (Incidents / History / Settings), with IncidentDetail pushed on top.
+ * @author Kyle Meredith
+ */
 import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -17,6 +22,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
+// Drawer icon for each drawer route, keyed by route name.
 const NAV_ICONS = {
   Incidents: 'alert-circle',
   History: 'check-all',
@@ -65,6 +71,7 @@ function DrawerContent(props) {
 
 const renderDrawerContent = (props) => <DrawerContent {...props} />;
 
+// Top-level destinations reachable from the hamburger menu.
 function MainDrawer() {
   const theme = useTheme();
   return (
@@ -96,6 +103,10 @@ function MainDrawer() {
   );
 }
 
+/**
+ * Root of the navigation tree. The drawer is nested inside the stack so the
+ * detail screen covers the whole app, drawer included.
+ */
 export function RootNavigator() {
   const theme = useTheme();
   return (

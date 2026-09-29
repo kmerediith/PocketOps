@@ -1,3 +1,9 @@
+/**
+ * @file Incident data store shared by every screen: the active queue, the
+ * resolved history, sync status, and the actions that change them. Handles
+ * polling, the offline cache and the outbox of pending actions.
+ * @author Kyle Meredith
+ */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import {
@@ -14,10 +20,16 @@ import { applyOp, replay } from '../services/outbox';
 
 const IncidentsContext = createContext(null);
 
+// How often the server is polled while the app is open.
 const POLL_MS = 10_000;
 
 const EMPTY_LISTS = { incidents: [], history: [] };
 
+/**
+ * Sends one queued outbox operation to the server.
+ * @param {{type: 'acknowledge'|'delete'|'deleteAll', incidentId?: string}} op
+ * @returns {Promise<unknown>} Rejects with the request error on failure.
+ */
 function sendOp(op) {
   switch (op.type) {
     case 'acknowledge':
@@ -31,18 +43,22 @@ function sendOp(op) {
   }
 }
 
+// Unique within a session even when two ops are queued in the same millisecond.
 let opCounter = 0;
 const makeOpId = () => `${Date.now()}-${opCounter++}`;
 
-// Shares the incident queue + resolved history across every screen.
-//
-// Offline support:
-// - The last lists are cached on-device and restored at launch.
-// - Acknowledge/delete are applied locally at once and queued in a persisted
-//   outbox, which is flushed in order on every sync (poll, refresh, app
-//   foreground, or right after the action).
-// - Conflicts: the server wins. A 4xx (e.g. the incident was deleted elsewhere)
-//   drops the queued op; network errors and 5xx keep it for the next attempt.
+/**
+ * Provides the incident queue and resolved history to the component tree.
+ *
+ * Offline support:
+ * - The last lists are cached on-device and restored at launch.
+ * - Acknowledge/delete are applied locally at once and queued in a persisted
+ *   outbox, which is flushed in order on every sync (poll, refresh, app
+ *   foreground, or right after the action).
+ * - Conflicts: the server wins. A 4xx (e.g. the incident was deleted
+ *   elsewhere) drops the queued op; network errors and 5xx keep it for the
+ *   next attempt.
+ */
 export function IncidentsProvider({ children }) {
   const [lists, setLists] = useState(EMPTY_LISTS);
   const [hydrated, setHydrated] = useState(false);
@@ -66,6 +82,8 @@ export function IncidentsProvider({ children }) {
     saveJSON(STORAGE_KEYS.outbox, ops);
   }, []);
 
+  // Sends queued ops oldest-first. Stops (by throwing) at the first op that
+  // can be retried later, so ordering is preserved.
   const flushOutbox = useCallback(async () => {
     while (outbox.current.length > 0) {
       const op = outbox.current[0];
@@ -79,6 +97,7 @@ export function IncidentsProvider({ children }) {
     }
   }, [writeOutbox]);
 
+  // One full round-trip: push pending ops, then pull fresh lists and regions.
   const syncOnce = useCallback(async () => {
     try {
       await flushOutbox();
@@ -174,6 +193,7 @@ export function IncidentsProvider({ children }) {
     saveJSON(STORAGE_KEYS.history, lists.history);
   }, [lists, hydrated]);
 
+  // Pull-to-refresh: a sync that also drives the `refreshing` spinner.
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -183,6 +203,7 @@ export function IncidentsProvider({ children }) {
     }
   }, [sync]);
 
+  // Applies an op optimistically, persists it to the outbox, and kicks a sync.
   const enqueue = useCallback(
     (op) => {
       const queued = { ...op, id: makeOpId(), at: Date.now() };
@@ -207,6 +228,7 @@ export function IncidentsProvider({ children }) {
 
   const { incidents, history } = lists;
 
+  // Looks an incident up in either list; null once it's gone from both.
   const getIncident = useCallback(
     (incidentId) =>
       incidents.find((incident) => incident.incidentId === incidentId) ??
@@ -253,6 +275,19 @@ export function IncidentsProvider({ children }) {
   return <IncidentsContext.Provider value={value}>{children}</IncidentsContext.Provider>;
 }
 
+/**
+ * Reads the incident store. Must be called under an IncidentsProvider.
+ * @returns {{
+ *   incidents: object[], history: object[], regions: {code: string, name: string}[],
+ *   loading: boolean, refreshing: boolean, error: Error|null,
+ *   online: boolean|null, lastSyncedAt: number|null, pendingCount: number,
+ *   acknowledge: (incidentId: string) => Promise<void>,
+ *   deleteIncident: (incidentId: string) => Promise<void>,
+ *   deleteAllHistory: () => Promise<void>,
+ *   getIncident: (incidentId: string) => object|null,
+ *   refresh: () => Promise<void>,
+ * }}
+ */
 export function useIncidents() {
   const context = useContext(IncidentsContext);
   if (!context) {

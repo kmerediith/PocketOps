@@ -1,10 +1,18 @@
+/**
+ * @file Chip bar for choosing which regions the incident lists show.
+ * @author Kyle Meredith
+ */
 import { ScrollView, StyleSheet } from 'react-native';
 import { Chip, useTheme } from 'react-native-paper';
 import { useRegionFilter } from '../context/RegionFilterContext';
 import { spacing, withAlpha } from '../theme';
 
-// Horizontally scrolling region chips; multi-select, with "All" to reset.
-// `incidents` is the unfiltered list the counts are taken from.
+/**
+ * Horizontally scrolling region chips; multi-select, with "All" to reset.
+ * Renders nothing until at least one region is known.
+ * @param {object} props
+ * @param {object[]} props.incidents Unfiltered list the per-region counts are taken from.
+ */
 export const RegionFilterBar = ({ incidents }) => {
   const theme = useTheme();
   const { regions, selectedRegions, isFiltering, toggleRegion, clearRegions } = useRegionFilter();
@@ -48,13 +56,16 @@ export const RegionFilterBar = ({ incidents }) => {
       {regions.map(({ code, name }) => {
         const selected = selectedRegions.includes(code);
         const count = countFor(code);
+        const label = [name, code, `${count} incidents`, selected && 'selected']
+          .filter(Boolean)
+          .join(', ');
         return (
           <Chip
             key={code}
             {...chipProps(selected)}
             icon={selected ? 'check' : 'map-marker-outline'}
             onPress={() => toggleRegion(code)}
-            accessibilityLabel={`${name ? `${name}, ` : ''}${code}, ${count} incidents${selected ? ', selected' : ''}`}
+            accessibilityLabel={label}
           >
             {`${code} · ${count}`}
           </Chip>

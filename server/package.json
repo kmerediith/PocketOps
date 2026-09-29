@@ -1,6 +1,9 @@
 {
   "name": "pocketops-server",
   "version": "1.0.0",
+  "description": "Express + SQLite API backing the PocketOps app.",
+  "author": "Kyle Meredith",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "main": "src/index.js",
@@ -11,7 +14,6 @@
   "dependencies": {
     "better-sqlite3": "^11.10.0",
     "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "pocketops": "file:.."
+    "express": "^4.21.2"
   }
 }

@@ -1,3 +1,7 @@
+/**
+ * @file Card that summarises one incident in a feed.
+ * @author Kyle Meredith
+ */
 import { StyleSheet, View } from 'react-native';
 import { Card, IconButton, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -14,7 +18,8 @@ const SeverityBadge = ({ color, icon, label }) => (
   </View>
 );
 
-const CardFooter = ({ onAcknowledge, onDelete, acknowledged }) => {
+// Acknowledge button for active incidents; "ACKNOWLEDGED" + delete for resolved ones.
+const CardFooter =({ onAcknowledge, onDelete, acknowledged }) => {
   const theme = useTheme();
   if (onAcknowledge) {
     return <AcknowledgeButton onPress={onAcknowledge} style={styles.footerButton} />;
@@ -44,6 +49,16 @@ const CardFooter = ({ onAcknowledge, onDelete, acknowledged }) => {
   return null;
 };
 
+/**
+ * One incident, colored by severity (or muted once acknowledged).
+ * Omit a callback to hide the matching affordance.
+ * @param {object} props Incident fields (incidentId, service, summary,
+ *   timeElapsed, region, severity) plus:
+ * @param {boolean} [props.acknowledged=false] Render in the resolved style.
+ * @param {() => void} [props.onPress] Opens the incident.
+ * @param {() => void} [props.onAcknowledge] Shows the acknowledge button.
+ * @param {() => void} [props.onDelete] Shows the delete icon (resolved only).
+ */
 export const AlertCard = ({
   incidentId,
   service,

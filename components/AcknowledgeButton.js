@@ -1,8 +1,18 @@
+/**
+ * @file Primary "acknowledge" action button with a press animation.
+ * @author Kyle Meredith
+ */
 import { useRef } from 'react';
 import { Animated } from 'react-native';
 import { Button } from 'react-native-paper';
 
-// Big thumb target that springs inward on press and bounces back on release.
+/**
+ * Big thumb target that springs inward on press and bounces back on release.
+ * @param {object} props
+ * @param {() => void} props.onPress
+ * @param {object} [props.style] Applied to the animated wrapper.
+ * @param {string} [props.label='ACKNOWLEDGE']
+ */
 export const AcknowledgeButton = ({ onPress, style, label = 'ACKNOWLEDGE' }) => {
   const scale = useRef(new Animated.Value(1)).current;
 

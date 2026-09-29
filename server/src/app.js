@@ -1,12 +1,22 @@
+/**
+ * @file Express app: HTTP routes for the incident API.
+ * @author Kyle Meredith
+ */
 import express from 'express';
 import cors from 'cors';
 import { openDatabase } from './db.js';
 import { createRepository } from './repository.js';
 import { generateIncident } from './generator.js';
 
-// Builds the Express app around a repository. Pass a db for tests; otherwise the
-// default SQLite file is opened. The repo is exposed on `app.locals.repo` so the
-// server entrypoint can share it with the background incident generator.
+/**
+ * Builds the Express app around a repository. The repo is exposed on
+ * `app.locals.repo` so the server entry point can share it with the
+ * background incident generator.
+ * @param {object} [options]
+ * @param {import('better-sqlite3').Database} [options.db] Pass one for tests;
+ *   defaults to the SQLite file from openDatabase().
+ * @returns {import('express').Express}
+ */
 export function createApp({ db = openDatabase() } = {}) {
   const repo = createRepository(db);
   const app = express();
@@ -15,6 +25,7 @@ export function createApp({ db = openDatabase() } = {}) {
   app.use(cors());
   app.use(express.json());
 
+  // One line per request, for following the app's polling in the terminal.
   app.use((req, _res, next) => {
     console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
     next();
@@ -75,8 +86,10 @@ export function createApp({ db = openDatabase() } = {}) {
     res.status(201).json(generateIncident(repo));
   });
 
+  // Unknown routes get JSON rather than Express's default HTML page.
   app.use((_req, res) => res.status(404).json({ error: 'not found' }));
 
+  // Express only treats a middleware as an error handler if it takes 4 args.
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
     console.error(err);

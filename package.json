@@ -1,6 +1,9 @@
 {
   "name": "pocketops",
   "version": "1.0.0",
+  "description": "Mobile incident console for data center on-call engineers.",
+  "author": "Kyle Meredith",
+  "license": "MIT",
   "main": "index.js",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.13",

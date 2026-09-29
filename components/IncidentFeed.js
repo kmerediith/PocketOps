@@ -1,3 +1,7 @@
+/**
+ * @file Scrollable incident list used by the Incidents and History screens.
+ * @author Kyle Meredith
+ */
 import { FlatList, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -48,8 +52,24 @@ const SectionHeader = ({ section, collapsed, onToggle }) => {
   );
 };
 
-// Reusable incident list: loader while fetching, cards, or an empty state.
-// With `groupBySeverity`, cards are split into collapsible Critical/High sections.
+/**
+ * Reusable incident list: loader while fetching, cards, or an empty state.
+ * With `groupBySeverity`, cards are split into collapsible Critical/High
+ * sections whose collapsed state is remembered on-device.
+ * @param {object} props
+ * @param {object[]} props.incidents Incidents to show (already filtered).
+ * @param {boolean} [props.loading=false] Show a spinner instead of the list.
+ * @param {string} [props.headerLabel] Caption above the first card.
+ * @param {string} props.emptyText Shown when `incidents` is empty.
+ * @param {string} [props.emptyIcon] Icon for the empty state.
+ * @param {string} [props.errorText] Replaces the empty state when set.
+ * @param {boolean} [props.groupBySeverity=false]
+ * @param {(incidentId: string) => void} [props.onSelect]
+ * @param {(incidentId: string) => void} [props.onAcknowledge]
+ * @param {(incidentId: string) => void} [props.onDelete]
+ * @param {() => void} [props.onRefresh] Enables pull-to-refresh.
+ * @param {boolean} [props.refreshing=false]
+ */
 export const IncidentFeed = ({
   loading = false,
   incidents,

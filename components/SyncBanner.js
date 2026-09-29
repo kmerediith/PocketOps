@@ -1,3 +1,7 @@
+/**
+ * @file Banner that reports offline state and queued actions.
+ * @author Kyle Meredith
+ */
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
@@ -5,8 +9,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useIncidents } from '../context/IncidentsContext';
 import { spacing, withAlpha } from '../theme';
 
+// How often the "last updated" age is re-rendered.
 const TICK_MS = 30_000;
 
+// Short age label for a timestamp: "just now", "5m ago", "2h ago", "3d ago".
 const describeAge = (timestamp, now) => {
   if (timestamp == null) return 'never';
   const minutes = Math.floor((now - timestamp) / 60_000);
@@ -19,7 +25,10 @@ const describeAge = (timestamp, now) => {
 
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-// Strip above the feed: "offline, showing cached data" or "syncing queued actions".
+/**
+ * Strip above the feed: "offline, showing cached data" or "syncing queued
+ * actions". Renders nothing when online with an empty outbox.
+ */
 export const SyncBanner = () => {
   const { online, lastSyncedAt, pendingCount } = useIncidents();
   const theme = useTheme();
@@ -61,11 +70,11 @@ export const SyncBanner = () => {
         <Text variant="labelLarge" style={{ color, fontWeight: '700' }}>
           {title}
         </Text>
-        {detail && (
+        {detail ? (
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
             {detail}
           </Text>
-        )}
+        ) : null}
       </View>
     </View>
   );

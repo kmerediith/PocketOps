@@ -1,11 +1,18 @@
+/**
+ * @file Region filter shared by the Incidents and History screens.
+ * @author Kyle Meredith
+ */
 import { createContext, useCallback, useContext, useMemo } from 'react';
 import { STORAGE_KEYS, usePersistentState } from '../services/storage';
 import { useIncidents } from './IncidentsContext';
 
 const RegionFilterContext = createContext(null);
 
-// Which data center regions the Incidents and Resolved lists show. Shared by
-// both screens and remembered on-device. An empty selection means "all regions".
+/**
+ * Tracks which data center regions the incident lists show. The selection is
+ * remembered on-device; an empty selection means "all regions".
+ * Must be rendered inside an IncidentsProvider.
+ */
 export function RegionFilterProvider({ children }) {
   const { regions: serverRegions, incidents, history } = useIncidents();
   const [selectedRegions, setSelectedRegions] = usePersistentState(STORAGE_KEYS.regionFilter, []);
@@ -31,6 +38,7 @@ export function RegionFilterProvider({ children }) {
 
   const clearRegions = useCallback(() => setSelectedRegions([]), [setSelectedRegions]);
 
+  // Narrows an incident list to the selected regions (no-op when none selected).
   const filterByRegion = useCallback(
     (list) =>
       selectedRegions.length === 0
@@ -39,6 +47,7 @@ export function RegionFilterProvider({ children }) {
     [selectedRegions]
   );
 
+  // Human label for a region code, or null if the server hasn't named it.
   const regionName = useCallback(
     (code) => regions.find((region) => region.code === code)?.name ?? null,
     [regions]
@@ -60,6 +69,15 @@ export function RegionFilterProvider({ children }) {
   return <RegionFilterContext.Provider value={value}>{children}</RegionFilterContext.Provider>;
 }
 
+/**
+ * Reads the region filter. Must be called under a RegionFilterProvider.
+ * @returns {{
+ *   regions: {code: string, name: string|null}[], selectedRegions: string[],
+ *   isFiltering: boolean, toggleRegion: (code: string) => void,
+ *   clearRegions: () => void, filterByRegion: (list: object[]) => object[],
+ *   regionName: (code: string) => string|null,
+ * }}
+ */
 export function useRegionFilter() {
   const context = useContext(RegionFilterContext);
   if (!context) {

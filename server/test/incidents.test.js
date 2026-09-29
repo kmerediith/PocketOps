@@ -1,3 +1,7 @@
+/**
+ * @file node:test suite for the repository, generator and HTTP routes.
+ * @author Kyle Meredith
+ */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { mkdtempSync, rmSync } from 'node:fs';

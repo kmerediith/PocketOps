@@ -1,3 +1,8 @@
+/**
+ * @file Expo entry point. The gesture-handler import must come first so it
+ * can patch React Native before any navigator loads.
+ * @author Kyle Meredith
+ */
 import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 

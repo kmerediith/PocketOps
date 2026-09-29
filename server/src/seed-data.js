@@ -1,3 +1,7 @@
+/**
+ * @file Sample incidents the database is seeded with on first run.
+ * @author Kyle Meredith
+ */
 // Fixtures the database is seeded with on first run. `minutesAgo` is turned into
 // a real `triggered_at` timestamp at seed time so relative times stay fresh.
 export const SEED_INCIDENTS = [

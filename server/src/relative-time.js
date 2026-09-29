@@ -1,9 +1,18 @@
+/**
+ * @file Relative time labels ("5 mins ago") for the wire format.
+ * @author Kyle Meredith
+ */
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-// Turns an epoch-ms timestamp into the short relative label the app renders
-// ("2 mins ago", "1 hr ago", ...).
+/**
+ * Turns an epoch-ms timestamp into the short relative label the app renders
+ * ("2 mins ago", "1 hr ago", ...). Future timestamps read as "just now".
+ * @param {number} epochMs
+ * @param {number} [now=Date.now()]
+ * @returns {string}
+ */
 export function formatRelative(epochMs, now = Date.now()) {
   const diff = Math.max(0, now - epochMs);
 

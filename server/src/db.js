@@ -1,9 +1,17 @@
+/**
+ * @file SQLite connection, schema, migrations and first-run seeding.
+ * @author Kyle Meredith
+ */
 import Database from 'better-sqlite3';
 import { SEED_INCIDENTS } from './seed-data.js';
 import { DEFAULT_REGION } from './regions.js';
 
-// Opens (and, on first run, builds + seeds) the SQLite database.
-// DB_PATH overrides the file location; pass ':memory:' for tests.
+/**
+ * Opens (and, on first run, builds and seeds) the SQLite database.
+ * @param {string} [path] File path; defaults to $DB_PATH or 'pocketops.sqlite'.
+ *   Pass ':memory:' for tests.
+ * @returns {import('better-sqlite3').Database}
+ */
 export function openDatabase(path = process.env.DB_PATH ?? 'pocketops.sqlite') {
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
@@ -33,6 +41,7 @@ function addRegionColumn(db) {
   db.exec(`ALTER TABLE incidents ADD COLUMN region TEXT NOT NULL DEFAULT '${DEFAULT_REGION}'`);
 }
 
+// Inserts SEED_INCIDENTS into an empty table, in a single transaction.
 function seedIfEmpty(db) {
   const { count } = db.prepare('SELECT COUNT(*) AS count FROM incidents').get();
   if (count > 0) return;

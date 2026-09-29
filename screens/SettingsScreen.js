@@ -1,15 +1,21 @@
+/**
+ * @file Notification preferences, stored on-device only.
+ * @author Kyle Meredith
+ */
 import { StyleSheet } from 'react-native';
 import { Card, Divider, List, Switch, Text } from 'react-native-paper';
 import { spacing } from '../theme';
 import { STORAGE_KEYS, usePersistentState } from '../services/storage';
 
+// Also fills in keys missing from settings saved by an older app version.
 const DEFAULT_SETTINGS = { push: true, criticalOnly: true, sound: false };
 
 const renderSwitch = (value, onValueChange) => () => (
   <Switch value={value} onValueChange={onValueChange} />
 );
 
-const Row = ({ label, description, value, onValueChange }) => (
+// A list row with a trailing switch; tapping anywhere on the row toggles it.
+const Row =({ label, description, value, onValueChange }) => (
   <List.Item
     title={label}
     description={description}
@@ -19,13 +25,11 @@ const Row = ({ label, description, value, onValueChange }) => (
   />
 );
 
+/** Notification toggles. These aren't wired to real notifications yet. */
 export function SettingsScreen() {
   const [settings, setSettings] = usePersistentState(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
   const { push, criticalOnly, sound } = { ...DEFAULT_SETTINGS, ...settings };
   const setter = (key) => (value) => setSettings((current) => ({ ...current, [key]: value }));
-  const setPush = setter('push');
-  const setCriticalOnly = setter('criticalOnly');
-  const setSound = setter('sound');
 
   return (
     <List.Section style={styles.container}>
@@ -35,21 +39,21 @@ export function SettingsScreen() {
           label="Push alerts"
           description="Receive a notification when a new incident is assigned."
           value={push}
-          onValueChange={setPush}
+          onValueChange={setter('push')}
         />
         <Divider />
         <Row
           label="Critical only"
           description="Mute anything below high severity."
           value={criticalOnly}
-          onValueChange={setCriticalOnly}
+          onValueChange={setter('criticalOnly')}
         />
         <Divider />
         <Row
           label="Alert sound"
           description="Play a sound for new incidents."
           value={sound}
-          onValueChange={setSound}
+          onValueChange={setter('sound')}
         />
       </Card>
 
