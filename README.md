@@ -53,6 +53,4 @@ Run the server tests with `npm run server:test`.
 | `theme.js` | Design tokens and the Paper / Navigation themes |
 | `server/` | Express + SQLite API |
 
-## License
 
-MIT © 2026 Kyle Meredith. See [LICENSE](LICENSE).
