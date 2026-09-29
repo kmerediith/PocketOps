@@ -22,6 +22,10 @@ export function createApp({ db = openDatabase() } = {}) {
 
   app.get('/health', (_req, res) => res.json({ ok: true }));
 
+  app.get('/api/regions', (_req, res) => {
+    res.json(repo.listRegions());
+  });
+
   app.get('/api/incidents', (_req, res) => {
     res.json(repo.listActive());
   });

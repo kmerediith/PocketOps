@@ -6,6 +6,7 @@ import {
   deleteIncident as deleteIncidentRequest,
   fetchIncidentHistory,
   fetchIncidentQueue,
+  fetchRegions,
   isRejection,
 } from '../services/incidents';
 import { STORAGE_KEYS, loadJSON, saveJSON } from '../services/storage';
@@ -51,6 +52,7 @@ export function IncidentsProvider({ children }) {
   const [online, setOnline] = useState(null);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [regions, setRegions] = useState([]);
 
   // The outbox lives in a ref so sync always sees the latest ops; the count is
   // mirrored into state for the UI.
@@ -80,9 +82,21 @@ export function IncidentsProvider({ children }) {
   const syncOnce = useCallback(async () => {
     try {
       await flushOutbox();
-      const [queue, resolved] = await Promise.all([fetchIncidentQueue(), fetchIncidentHistory()]);
+      const [queue, resolved, regionList] = await Promise.all([
+        fetchIncidentQueue(),
+        fetchIncidentHistory(),
+        // An older server without /api/regions shouldn't knock the app offline.
+        fetchRegions().catch((err) => {
+          if (isRejection(err)) return null;
+          throw err;
+        }),
+      ]);
       // Re-apply anything queued while the fetch was in flight.
       setLists(replay({ incidents: queue, history: resolved }, outbox.current));
+      if (regionList) {
+        setRegions(regionList);
+        saveJSON(STORAGE_KEYS.regions, regionList);
+      }
       const now = Date.now();
       setLastSyncedAt(now);
       saveJSON(STORAGE_KEYS.lastSyncedAt, now);
@@ -117,15 +131,17 @@ export function IncidentsProvider({ children }) {
     let timer;
 
     (async () => {
-      const [incidents, history, syncedAt, ops] = await Promise.all([
+      const [incidents, history, syncedAt, ops, cachedRegions] = await Promise.all([
         loadJSON(STORAGE_KEYS.incidents, []),
         loadJSON(STORAGE_KEYS.history, []),
         loadJSON(STORAGE_KEYS.lastSyncedAt, null),
         loadJSON(STORAGE_KEYS.outbox, []),
+        loadJSON(STORAGE_KEYS.regions, []),
       ]);
       if (cancelled) return;
 
       setLists({ incidents, history });
+      setRegions(cachedRegions);
       setLastSyncedAt(syncedAt);
       writeOutbox(ops);
       setHydrated(true);
@@ -209,6 +225,7 @@ export function IncidentsProvider({ children }) {
       online,
       lastSyncedAt,
       pendingCount,
+      regions,
       acknowledge,
       deleteIncident,
       deleteAllHistory,
@@ -224,6 +241,7 @@ export function IncidentsProvider({ children }) {
       online,
       lastSyncedAt,
       pendingCount,
+      regions,
       acknowledge,
       deleteIncident,
       deleteAllHistory,

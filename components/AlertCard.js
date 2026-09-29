@@ -49,6 +49,7 @@ export const AlertCard = ({
   service,
   summary,
   timeElapsed,
+  region,
   severity = 'critical',
   onPress,
   onAcknowledge,
@@ -101,9 +102,24 @@ export const AlertCard = ({
           {service}
         </Text>
 
-        <Text variant="labelMedium" style={[styles.incidentId, { color: muted }]}>
-          {incidentId}
-        </Text>
+        <View style={[styles.inline, styles.idRow]}>
+          <Text variant="labelMedium" style={[styles.incidentId, { color: muted }]}>
+            {incidentId}
+          </Text>
+          {region ? (
+            <>
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={14}
+                color={muted}
+                style={styles.regionIcon}
+              />
+              <Text variant="labelMedium" style={{ color: muted }}>
+                {region}
+              </Text>
+            </>
+          ) : null}
+        </View>
 
         <Text
           variant="bodyLarge"
@@ -159,10 +175,16 @@ const styles = StyleSheet.create({
   service: {
     fontWeight: 'bold',
   },
-  incidentId: {
+  idRow: {
     marginTop: 2,
     marginBottom: spacing.sm,
+  },
+  incidentId: {
     letterSpacing: 0.5,
+  },
+  regionIcon: {
+    marginLeft: spacing.md,
+    marginRight: 2,
   },
   summary: {
     marginBottom: spacing.md,

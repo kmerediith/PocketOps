@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import Database from 'better-sqlite3';
 import { openDatabase } from '../src/db.js';
 import { createRepository } from '../src/repository.js';
 import { createApp } from '../src/app.js';
@@ -230,6 +234,62 @@ test('DELETE /api/incidents/history clears the resolved list in one call', async
 
     const history = await (await fetch(`${base}/api/incidents/history`)).json();
     assert.equal(history.length, 0);
+  } finally {
+    server.close();
+  }
+});
+
+test('every incident carries a known region', () => {
+  const repo = freshRepo();
+  const codes = repo.listRegions().map((region) => region.code);
+
+  assert.ok(codes.length > 1);
+  assert.equal(repo.getById('INC-9942').region, 'us-east-1');
+  assert.ok(repo.listActive().every((incident) => codes.includes(incident.region)));
+  assert.ok(codes.includes(generateIncident(repo).region));
+});
+
+test('create defaults the region and rejects unknown ones', () => {
+  const repo = freshRepo();
+  const base = { service: 'Rack Z01 · test', severity: 'high', summary: 'HIGH: synthetic' };
+
+  assert.equal(repo.create(base).incident.region, 'us-east-1');
+  assert.equal(repo.create({ ...base, region: 'eu-west-1' }).incident.region, 'eu-west-1');
+  assert.match(repo.create({ ...base, region: 'mars-north-1' }).error, /region must be one of/);
+});
+
+test('opening a pre-region database adds the column with the default region', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pocketops-'));
+  const path = join(dir, 'legacy.sqlite');
+  try {
+    const legacy = new Database(path);
+    legacy.exec(`
+      CREATE TABLE incidents (
+        incident_id TEXT PRIMARY KEY, service TEXT NOT NULL, severity TEXT NOT NULL,
+        summary TEXT NOT NULL, triggered_at INTEGER NOT NULL, acknowledged_at INTEGER
+      );
+      INSERT INTO incidents VALUES ('INC-0001', 'Rack A01', 'high', 'HIGH: old', 0, NULL);
+    `);
+    legacy.close();
+
+    const db = openDatabase(path);
+    assert.equal(createRepository(db).getById('INC-0001').region, 'us-east-1');
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('GET /api/regions lists the regions', async () => {
+  const app = createApp({ db: openDatabase(':memory:') });
+  const server = app.listen(0);
+  const base = `http://localhost:${server.address().port}`;
+
+  try {
+    const res = await fetch(`${base}/api/regions`);
+    assert.equal(res.status, 200);
+    const regions = await res.json();
+    assert.ok(regions.some((region) => region.code === 'us-east-1' && region.name));
   } finally {
     server.close();
   }

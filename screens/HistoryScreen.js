@@ -2,11 +2,21 @@ import { useLayoutEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Appbar, Button, Dialog, Portal, Text, useTheme } from 'react-native-paper';
 import { useIncidents } from '../context/IncidentsContext';
+import { useRegionFilter } from '../context/RegionFilterContext';
 import { IncidentFeed } from '../components/IncidentFeed';
+import { RegionFilterBar } from '../components/RegionFilterBar';
 import { SyncBanner } from '../components/SyncBanner';
 
 export function HistoryScreen({ navigation }) {
   const { history, refreshing, refresh, deleteIncident, deleteAllHistory } = useIncidents();
+  const { filterByRegion, isFiltering } = useRegionFilter();
+  const visible = filterByRegion(history);
+
+  let headerLabel;
+  if (visible.length > 0) {
+    const count = isFiltering ? `${visible.length} of ${history.length}` : visible.length;
+    headerLabel = `${count} resolved`;
+  }
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const theme = useTheme();
@@ -34,11 +44,16 @@ export function HistoryScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <SyncBanner />
+      <RegionFilterBar incidents={history} />
       <IncidentFeed
-        incidents={history}
-        headerLabel={history.length > 0 ? `${history.length} resolved` : undefined}
-        emptyText="Nothing acknowledged yet."
-        emptyIcon="history"
+        incidents={visible}
+        headerLabel={headerLabel}
+        emptyText={
+          isFiltering && history.length > 0
+            ? 'Nothing resolved in the selected regions.'
+            : 'Nothing acknowledged yet.'
+        }
+        emptyIcon={isFiltering ? 'map-marker-off-outline' : 'history'}
         onSelect={(incidentId) => navigation.navigate('IncidentDetail', { incidentId })}
         onDelete={setPendingDeleteId}
         onRefresh={refresh}
@@ -66,7 +81,8 @@ export function HistoryScreen({ navigation }) {
           <Dialog.Content>
             <Text variant="bodyMedium">
               All {history.length} resolved {history.length === 1 ? 'incident' : 'incidents'} will
-              be permanently removed from history.
+              be permanently removed from history
+              {isFiltering ? ', including ones hidden by the region filter.' : '.'}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>

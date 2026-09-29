@@ -1,10 +1,14 @@
 import { INCIDENT_TEMPLATES } from './generator-data.js';
+import { REGIONS } from './regions.js';
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-// Builds one randomised incident from the templates and inserts it.
+// Builds one randomised incident from the templates, in a random region, and inserts it.
 export function generateIncident(repo) {
-  const { incident, error } = repo.create(pick(INCIDENT_TEMPLATES)());
+  const { incident, error } = repo.create({
+    ...pick(INCIDENT_TEMPLATES)(),
+    region: pick(REGIONS).code,
+  });
   if (error) throw new Error(`generator produced an invalid incident: ${error}`);
   return incident;
 }

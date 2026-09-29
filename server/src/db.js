@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { SEED_INCIDENTS } from './seed-data.js';
+import { DEFAULT_REGION } from './regions.js';
 
 // Opens (and, on first run, builds + seeds) the SQLite database.
 // DB_PATH overrides the file location; pass ':memory:' for tests.
@@ -13,13 +14,23 @@ export function openDatabase(path = process.env.DB_PATH ?? 'pocketops.sqlite') {
       service         TEXT NOT NULL,
       severity        TEXT NOT NULL,
       summary         TEXT NOT NULL,
+      region          TEXT NOT NULL DEFAULT '${DEFAULT_REGION}',
       triggered_at    INTEGER NOT NULL,
       acknowledged_at INTEGER
     );
   `);
 
+  addRegionColumn(db);
   seedIfEmpty(db);
   return db;
+}
+
+// Databases created before regions existed lack the column; existing rows
+// land in DEFAULT_REGION.
+function addRegionColumn(db) {
+  const columns = db.prepare('PRAGMA table_info(incidents)').all();
+  if (columns.some((column) => column.name === 'region')) return;
+  db.exec(`ALTER TABLE incidents ADD COLUMN region TEXT NOT NULL DEFAULT '${DEFAULT_REGION}'`);
 }
 
 function seedIfEmpty(db) {
@@ -28,8 +39,8 @@ function seedIfEmpty(db) {
 
   const now = Date.now();
   const insert = db.prepare(`
-    INSERT INTO incidents (incident_id, service, severity, summary, triggered_at)
-    VALUES (@incidentId, @service, @severity, @summary, @triggeredAt)
+    INSERT INTO incidents (incident_id, service, severity, summary, region, triggered_at)
+    VALUES (@incidentId, @service, @severity, @summary, @region, @triggeredAt)
   `);
 
   const seed = db.transaction((rows) => {
@@ -39,6 +50,7 @@ function seedIfEmpty(db) {
         service: row.service,
         severity: row.severity,
         summary: row.summary,
+        region: row.region,
         triggeredAt: now - row.minutesAgo * 60_000,
       });
     }

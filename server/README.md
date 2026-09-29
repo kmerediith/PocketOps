@@ -38,14 +38,19 @@ generates one on demand.
 | method + path                        | description                                  |
 |--------------------------------------|----------------------------------------------|
 | `GET  /health`                       | `{ ok: true }`                               |
+| `GET  /api/regions`                  | data center regions: `[{ code, name }]`      |
 | `GET  /api/incidents`                | active queue, critical first then newest      |
 | `GET  /api/incidents/history`        | acknowledged incidents, newest first         |
 | `GET  /api/incidents/:id`            | one incident (either state)                   |
 | `POST /api/incidents/:id/acknowledge`| mark acknowledged (idempotent)               |
-| `POST /api/incidents`                | create one: `{ service, severity, summary }` |
+| `POST /api/incidents`                | create one: `{ service, severity, summary, region? }` |
 | `POST /api/incidents/simulate`       | generate one randomised incident now         |
 
-`severity` is `"critical"` or `"high"`.
+`severity` is `"critical"` or `"high"`. `region` is one of the codes from
+`/api/regions` (`us-east-1`, `us-west-2`, `eu-west-1`, `ap-southeast-1`) and
+defaults to `us-east-1`. Databases created before regions existed are migrated
+on startup; their existing incidents land in `us-east-1`. Delete
+`pocketops.sqlite` to reseed with incidents spread across all regions.
 
 ## Pointing the app at this server
 

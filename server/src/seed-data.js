@@ -3,6 +3,7 @@
 export const SEED_INCIDENTS = [
   {
     incidentId: 'INC-9942',
+    region: 'us-east-1',
     service: 'Rack B14 · Node db-node-beta',
     severity: 'critical',
     summary:
@@ -11,6 +12,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9943',
+    region: 'us-west-2',
     service: 'Rack C07 · Node compute-041',
     severity: 'critical',
     summary: 'CRITICAL: PSU 1 failed, unit running on redundant PSU 2 with no backup',
@@ -18,6 +20,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9944',
+    region: 'eu-west-1',
     service: 'Rack A03 · Storage array jbod-12',
     severity: 'critical',
     summary:
@@ -26,6 +29,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9945',
+    region: 'ap-southeast-1',
     service: 'Row 4 · CRAC unit 2',
     severity: 'critical',
     summary:
@@ -34,6 +38,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9946',
+    region: 'us-west-2',
     service: 'Rack C07 · ToR switch tor-c07-a',
     severity: 'critical',
     summary: 'CRITICAL: uplink port Et49 down, LACP bundle running at 50% capacity',
@@ -41,6 +46,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9947',
+    region: 'us-east-1',
     service: 'Rack B14 · PDU-B',
     severity: 'critical',
     summary:
@@ -49,6 +55,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9948',
+    region: 'ap-southeast-1',
     service: 'Rack D11 · Node compute-118',
     severity: 'high',
     summary: 'HIGH: CPU socket 0 core temp sustained at 94°C — thermal throttling engaged',
@@ -56,6 +63,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9949',
+    region: 'eu-west-1',
     service: 'Rack A03 · Storage array jbod-12',
     severity: 'high',
     summary: 'HIGH: RAID-6 rebuild running at 6% — estimated 19h to restore parity',
@@ -63,6 +71,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9950',
+    region: 'us-east-1',
     service: 'Row 2 · CRAC unit 5',
     severity: 'high',
     summary:
@@ -71,6 +80,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9951',
+    region: 'us-west-2',
     service: 'Rack C07 · Node compute-041',
     severity: 'high',
     summary: 'HIGH: NIC eth1 logging CRC errors at 1.2k/min — link flapping intermittently',
@@ -78,6 +88,7 @@ export const SEED_INCIDENTS = [
   },
   {
     incidentId: 'INC-9952',
+    region: 'us-east-1',
     service: 'Rack B14 · Node db-node-beta',
     severity: 'high',
     summary: 'HIGH: root volume at 91% capacity — WAL archiving may stall within 3h',

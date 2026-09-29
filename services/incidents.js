@@ -30,6 +30,10 @@ async function request(path, options) {
 // help. Network failures (no status) and 5xx are worth retrying later.
 export const isRejection = (err) => err?.status >= 400 && err.status < 500;
 
+export function fetchRegions() {
+  return request('/api/regions');
+}
+
 export function fetchIncidentQueue() {
   return request('/api/incidents');
 }

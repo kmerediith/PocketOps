@@ -1,18 +1,22 @@
 import { MD3DarkTheme, adaptNavigationTheme } from 'react-native-paper';
 import { DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 
-// Shared design tokens for Pocket Ops.
+// Shared design tokens for Pocket Ops — AWS palette: squid ink (#252F3E)
+// surfaces with orange (#FF9900) as the action color.
 export const colors = {
-  background: '#0B0D12',
-  surface: '#1A1E27',
-  surfaceRaised: '#252B38',
-  border: '#343B4D',
+  background: '#161E2B',
+  surface: '#252F3E',
+  surfaceRaised: '#2F3B4E',
+  border: '#3D4A5E',
   textPrimary: '#F5F7FA',
-  textMuted: '#9AA3B5',
-  critical: '#FF4C4C',
-  warning: '#FFC24B',
-  action: '#007AFF',
-  actionPressed: '#005BB5',
+  textMuted: '#A7B1C2',
+  critical: '#FF5A5F',
+  // Yellow rather than amber so "high" never reads as the orange action color.
+  warning: '#FFD33D',
+  action: '#FF9900',
+  actionPressed: '#EC7211',
+  // Dark ink on orange: white on #FF9900 fails contrast.
+  onAction: '#16191F',
 };
 
 export const spacing = {
@@ -29,7 +33,13 @@ export const paperTheme = {
   colors: {
     ...MD3DarkTheme.colors,
     primary: colors.action,
-    onPrimary: '#FFFFFF',
+    onPrimary: colors.onAction,
+    primaryContainer: colors.actionPressed,
+    onPrimaryContainer: colors.onAction,
+    secondary: colors.action,
+    onSecondary: colors.onAction,
+    secondaryContainer: colors.surfaceRaised,
+    onSecondaryContainer: colors.textPrimary,
     background: colors.background,
     onBackground: colors.textPrimary,
     surface: colors.surface,

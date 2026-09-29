@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   outbox: 'pocketops:outbox',
   settings: 'pocketops:settings',
   collapsedSections: 'pocketops:collapsedSections',
+  regions: 'pocketops:regions',
+  regionFilter: 'pocketops:regionFilter',
 };
 
 export async function loadJSON(key, fallback) {

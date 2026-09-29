@@ -1,4 +1,5 @@
 import { formatRelative } from './relative-time.js';
+import { DEFAULT_REGION, REGIONS, isRegion } from './regions.js';
 
 const SEVERITIES = new Set(['critical', 'high']);
 
@@ -12,6 +13,7 @@ function toWire(row) {
     service: row.service,
     severity: row.severity,
     summary: row.summary,
+    region: row.region,
     timeElapsed: formatRelative(row.triggered_at),
   };
   if (row.acknowledged_at != null) incident.resolvedAt = row.acknowledged_at;
@@ -40,8 +42,8 @@ export function createRepository(db) {
       FROM incidents WHERE incident_id LIKE 'INC-%'
     `),
     insert: db.prepare(`
-      INSERT INTO incidents (incident_id, service, severity, summary, triggered_at)
-      VALUES (@incidentId, @service, @severity, @summary, @triggeredAt)
+      INSERT INTO incidents (incident_id, service, severity, summary, region, triggered_at)
+      VALUES (@incidentId, @service, @severity, @summary, @region, @triggeredAt)
     `),
     deleteResolved: db.prepare(`
       DELETE FROM incidents WHERE incident_id = ? AND acknowledged_at IS NOT NULL
@@ -66,13 +68,19 @@ export function createRepository(db) {
       return toWire(statements.byId.get(id));
     },
 
+    listRegions: () => REGIONS,
+
     // Returns { incident } on success, or { error } describing what was invalid.
-    create({ service, severity, summary } = {}) {
+    // `region` is optional and defaults to DEFAULT_REGION.
+    create({ service, severity, summary, region = DEFAULT_REGION } = {}) {
       if (!service || !severity || !summary) {
         return { error: 'service, severity and summary are required' };
       }
       if (!SEVERITIES.has(severity)) {
         return { error: `severity must be one of: ${[...SEVERITIES].join(', ')}` };
+      }
+      if (!isRegion(region)) {
+        return { error: `region must be one of: ${REGIONS.map((r) => r.code).join(', ')}` };
       }
       const nextNumber = (statements.maxSuffix.get().max ?? 9952) + 1;
       const incidentId = `INC-${nextNumber}`;
@@ -81,6 +89,7 @@ export function createRepository(db) {
         service,
         severity,
         summary,
+        region,
         triggeredAt: Date.now(),
       });
       return { incident: toWire(statements.byId.get(incidentId)) };

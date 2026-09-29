@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Dialog, Divider, Portal, Text, useTheme } from 'react-native-paper';
 import { severityColor, spacing } from '../theme';
 import { useIncidents } from '../context/IncidentsContext';
+import { useRegionFilter } from '../context/RegionFilterContext';
 import { AcknowledgeButton } from '../components/AcknowledgeButton';
 
 const Field = ({ label, value, valueStyle }) => (
@@ -20,6 +21,7 @@ export function IncidentDetailScreen({ route, navigation }) {
   const { incidentId } = route.params;
   const { getIncident, acknowledge, deleteIncident } = useIncidents();
   const incident = getIncident(incidentId);
+  const { regionName } = useRegionFilter();
   const theme = useTheme();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -69,6 +71,19 @@ export function IncidentDetailScreen({ route, navigation }) {
         <Divider />
         <Field label="Asset" value={incident.service} valueStyle={styles.service} />
         <Divider />
+        {incident.region ? (
+          <>
+            <Field
+              label="Region"
+              value={
+                regionName(incident.region)
+                  ? `${incident.region} · ${regionName(incident.region)}`
+                  : incident.region
+              }
+            />
+            <Divider />
+          </>
+        ) : null}
         <Field
           label="Fault"
           value={incident.summary}

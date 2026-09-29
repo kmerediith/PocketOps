@@ -1,26 +1,41 @@
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useIncidents } from '../context/IncidentsContext';
+import { useRegionFilter } from '../context/RegionFilterContext';
 import { IncidentFeed } from '../components/IncidentFeed';
+import { RegionFilterBar } from '../components/RegionFilterBar';
 import { SyncBanner } from '../components/SyncBanner';
+
+const countLabel = (count) => `${count} active ${count === 1 ? 'incident' : 'incidents'}`;
 
 export function IncidentsScreen({ navigation }) {
   const { incidents, loading, refreshing, error, acknowledge, refresh } = useIncidents();
+  const { filterByRegion, isFiltering } = useRegionFilter();
   const theme = useTheme();
 
-  const headerLabel = loading
-    ? undefined
-    : `${incidents.length} active ${incidents.length === 1 ? 'incident' : 'incidents'}`;
+  const visible = filterByRegion(incidents);
+
+  let headerLabel;
+  if (!loading) {
+    headerLabel = isFiltering
+      ? `${countLabel(visible.length)} of ${incidents.length}`
+      : countLabel(incidents.length);
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <SyncBanner />
+      {!loading && <RegionFilterBar incidents={incidents} />}
       <IncidentFeed
         loading={loading}
-        incidents={incidents}
+        incidents={visible}
         headerLabel={headerLabel}
-        emptyText="Zero active high-severity incidents."
-        emptyIcon="shield-check-outline"
+        emptyText={
+          isFiltering && incidents.length > 0
+            ? 'No active incidents in the selected regions.'
+            : 'Zero active high-severity incidents.'
+        }
+        emptyIcon={isFiltering ? 'map-marker-off-outline' : 'shield-check-outline'}
         groupBySeverity
         errorText={error ? "Can't reach the incident service. Pull to retry." : undefined}
         onSelect={(incidentId) => navigation.navigate('IncidentDetail', { incidentId })}

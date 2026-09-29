@@ -117,6 +117,7 @@ export const IncidentFeed = ({
       service={item.service}
       summary={item.summary}
       timeElapsed={item.timeElapsed}
+      region={item.region}
       severity={item.severity}
       acknowledged={Boolean(item.resolvedAt)}
       onPress={onSelect ? () => onSelect(item.incidentId) : undefined}

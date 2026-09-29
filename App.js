@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IncidentsProvider } from './context/IncidentsContext';
+import { RegionFilterProvider } from './context/RegionFilterContext';
 import { RootNavigator } from './navigation/RootNavigator';
 import { paperTheme } from './theme';
 
@@ -17,8 +18,10 @@ export default function App() {
       <SafeAreaProvider>
         <PaperProvider theme={paperTheme} settings={paperSettings}>
           <IncidentsProvider>
-            <StatusBar style="light" />
-            <RootNavigator />
+            <RegionFilterProvider>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </RegionFilterProvider>
           </IncidentsProvider>
         </PaperProvider>
       </SafeAreaProvider>
