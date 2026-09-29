@@ -3,7 +3,7 @@
  * (Incidents / History / Settings), with IncidentDetail pushed on top.
  * @author Kyle Meredith
  */
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
@@ -22,9 +22,10 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-// Drawer icon for each drawer route, keyed by route name.
+// Drawer icon for each drawer route, keyed by route name: a
+// MaterialCommunityIcons name or an image source.
 const NAV_ICONS = {
-  Incidents: 'alert-circle',
+  Incidents: require('../assets/nav-icon.png'),
   History: 'check-all',
   Settings: 'cog',
 };
@@ -46,9 +47,17 @@ function PaperHeader({ navigation, route, options, back }) {
 }
 
 const renderPaperHeader = (props) => <PaperHeader {...props} />;
-const renderDrawerIcon = (routeName) => ({ color, size }) => (
-  <MaterialCommunityIcons name={NAV_ICONS[routeName]} size={size} color={color} />
-);
+const renderDrawerIcon = (routeName) => ({ color, size }) =>
+  typeof NAV_ICONS[routeName] === 'string' ? (
+    <MaterialCommunityIcons name={NAV_ICONS[routeName]} size={size} color={color} />
+  ) : (
+    // Image icons are single-color glyphs, tinted like the vector icons.
+    <Image
+      source={NAV_ICONS[routeName]}
+      style={{ width: size, height: size, tintColor: color }}
+      resizeMode="contain"
+    />
+  );
 
 // Branded header above the list of drawer items.
 function DrawerContent(props) {
